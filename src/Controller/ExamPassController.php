@@ -139,6 +139,23 @@ class ExamPassController extends AbstractController
             }
         }
 
+        $proctorRaw = (string) $request->request->get('proctor', '{}');
+        $proctor = json_decode($proctorRaw, true);
+        if (!is_array($proctor)) {
+            $proctor = [];
+        }
+
+        $tabHidden = (int) ($proctor['tabHiddenCount'] ?? 0);
+        $copy = (int) ($proctor['copyCount'] ?? 0);
+        $paste = (int) ($proctor['pasteCount'] ?? 0);
+
+        // règle simple
+        $isFlagged = ($tabHidden >= 2) || ($copy + $paste >= 2);
+
+        $assignment->setProctoringReport($proctor);
+        $assignment->setIsFlagged($isFlagged);
+
+
         $em->flush();
 
         $finalGrade = $grader->grade($assignment);

@@ -72,6 +72,16 @@ class AdminController extends AbstractController
             }
         }
 
+        $recentAssignments = $assignRepo->createQueryBuilder('a')
+            ->leftJoin('a.exam', 'e')->addSelect('e')
+            ->leftJoin('a.student', 's')->addSelect('s')
+            ->where('a.status = :status')
+            ->setParameter('status', 'SUBMITTED')
+            ->orderBy('a.submittedAt', 'DESC')
+            ->setMaxResults(15)
+            ->getQuery()
+            ->getResult();
+
         return $this->render('admin/dashboard.html.twig', [
             'teachers' => $teachers,
             'students' => $students,
@@ -81,6 +91,7 @@ class AdminController extends AbstractController
             'totalExams' => $totalExams,
             'submissionRate' => $submissionRate,
             'chartData' => $chartData,
+            'recentAssignments' => $recentAssignments,
         ]);
     }
 

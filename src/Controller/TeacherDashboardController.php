@@ -24,9 +24,14 @@ class TeacherDashboardController extends AbstractController
         $assignRepo = $em->getRepository(Assignment::class);
 
         // 🔹 Pagination des examens
+        $teacher = $this->getUser();
+
         $query = $examRepo->createQueryBuilder('e')
+            ->where('e.teacher = :teacher')      // <-- adapte le champ si besoin
+            ->setParameter('teacher', $teacher)
             ->orderBy('e.id', 'DESC')
             ->getQuery();
+
 
         $exams = $paginator->paginate(
             $query,
@@ -35,7 +40,13 @@ class TeacherDashboardController extends AbstractController
         );
 
         // 📊 Récupération des affectations
-        $assignments = $assignRepo->findAll();
+        $assignments = $assignRepo->createQueryBuilder('a')
+        ->leftJoin('a.exam', 'e')->addSelect('e')
+        ->where('e.teacher = :teacher')      // <-- adapte le champ si besoin
+        ->setParameter('teacher', $teacher)
+        ->getQuery()
+        ->getResult();
+
         $totalAssignments = count($assignments);
 
         // 🔹 Calcul du taux de soumission
@@ -46,12 +57,17 @@ class TeacherDashboardController extends AbstractController
 
         // 👩‍🎓 Nombre d’étudiants distincts ayant rendu au moins un examen
         $uniqueStudentsCount = (int) $em->createQueryBuilder()
-            ->select('COUNT(DISTINCT a.student)')
+            ->select('COUNT(DISTINCT s.id)')
             ->from(Assignment::class, 'a')
+            ->leftJoin('a.exam', 'e')
+            ->leftJoin('a.student', 's')
             ->where('a.status = :status')
+            ->andWhere('e.teacher = :teacher')   // <-- adapte le champ si besoin
             ->setParameter('status', 'SUBMITTED')
+            ->setParameter('teacher', $teacher)
             ->getQuery()
             ->getSingleScalarResult();
+
 
         // 📈 Statistiques par examen
         $stats = [];
@@ -79,6 +95,18 @@ class TeacherDashboardController extends AbstractController
             ];
         }
 
+        $recentAssignments = $assignRepo->createQueryBuilder('a')
+            ->leftJoin('a.exam', 'e')->addSelect('e')
+            ->leftJoin('a.student', 's')->addSelect('s')
+            ->where('a.status = :status')
+            ->andWhere('e.teacher = :teacher')   // <-- adapte le champ si besoin
+            ->setParameter('status', 'SUBMITTED')
+            ->setParameter('teacher', $teacher)
+            ->orderBy('a.submittedAt', 'DESC')
+            ->setMaxResults(10)
+            ->getQuery()
+            ->getResult();
+
         // 🧾 Rendu de la vue
         return $this->render('teacher/dashboard.html.twig', [
             'exams' => $exams,
@@ -86,6 +114,7 @@ class TeacherDashboardController extends AbstractController
             'submissionRate' => $submissionRate,
             'uniqueStudentsCount' => $uniqueStudentsCount,
             'stats' => $stats,
+            'recentAssignments' => $recentAssignments,
         ]);
     }
 }

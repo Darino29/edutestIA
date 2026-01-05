@@ -234,6 +234,63 @@
         </div>
       </div>
     </section>
+    <section class="mb-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 text-primary">
+            <i class="bi bi-shield-check me-2"></i> Tentatives récentes (anti-triche)
+          </h5>
+        </div>
+
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>Étudiant</th>
+                  <th>Examen</th>
+                  <th class="text-center">Soumis le</th>
+                  <th class="text-center">Onglet</th>
+                  <th class="text-center">Copy</th>
+                  <th class="text-center">Paste</th>
+                  <th class="text-center">Statut</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for assignment in recentAssignments %}
+                  {% set r = assignment.proctoringReport ?? {} %}
+                  <tr>
+                    <td>
+                      <strong>{{ assignment.student.fullName }}</strong><br>
+                      <small class="text-muted">{{ assignment.student.email }}</small>
+                    </td>
+                    <td>{{ assignment.exam.title }}</td>
+                    <td class="text-center">
+                      {{ assignment.submittedAt ? assignment.submittedAt|date('d/m/Y H:i') : '—' }}
+                    </td>
+                    <td class="text-center">{{ r.tabHiddenCount ?? 0 }}</td>
+                    <td class="text-center">{{ r.copyCount ?? 0 }}</td>
+                    <td class="text-center">{{ r.pasteCount ?? 0 }}</td>
+                    <td class="text-center">
+                      {% if assignment.isFlagged %}
+                        <span class="badge bg-danger">Suspect</span>
+                      {% else %}
+                        <span class="badge bg-success">OK</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="7" class="text-center text-muted">Aucune tentative récente.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
 
   </main>
 </div>

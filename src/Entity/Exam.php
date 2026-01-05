@@ -43,6 +43,10 @@ class Exam
     #[ORM\OneToMany(targetEntity: Assignment::class, mappedBy: 'exam', cascade: ['persist', 'remove'])]
     private Collection $assignments;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $teacher = null;
+
     public function __construct()
     {
         $this->questions = new ArrayCollection();
@@ -160,6 +164,17 @@ class Exam
                 $assignment->setExam(null);
             }
         }
+        return $this;
+    }
+
+    public function getTeacher(): ?User { return $this->teacher; }
+
+    public function setTeacher(User $teacher): static
+    {
+        if (!in_array('ROLE_TEACHER', $teacher->getRoles(), true)) {
+            throw new \InvalidArgumentException("Le propriétaire de l'examen doit être un enseignant.");
+        }
+        $this->teacher = $teacher;
         return $this;
     }
 }

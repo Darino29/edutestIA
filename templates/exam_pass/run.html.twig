@@ -20,6 +20,7 @@
 
     <!-- FORM -->
     <form method="post" action="{{ path('student_exam_submit', {'id': assignment.id}) }}">
+        <input type="hidden" name="proctor" id="proctor" value="{}">
         {% for question in questions %}
             <div class="card border-0 shadow-sm p-4 mb-4 question-card">
                 <h5 class="fw-bold mb-2">
@@ -208,4 +209,5 @@
     // Nettoyer à la soumission
     form.addEventListener('submit', () => localStorage.removeItem(storageKey));
 </script>
+<script src="{{ asset('js/anti_cheat.js') }}" defer></script>
 {% endblock %}

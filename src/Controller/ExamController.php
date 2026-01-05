@@ -30,6 +30,8 @@ final class ExamController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            
+            $exam->setTeacher($this->getUser()); // le user connecté (teacher)
             $entityManager->persist($exam);
             $entityManager->flush();
 

@@ -45,6 +45,12 @@ class Assignment
     #[ORM\OneToMany(targetEntity: Answer::class, mappedBy: 'assignment', cascade: ['persist', 'remove'])]
     private Collection $answers;
 
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $proctoringReport = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isFlagged = false;
+
     public function __construct()
     {
         $this->answers = new ArrayCollection();
@@ -158,6 +164,28 @@ class Assignment
                 $answer->setAssignment(null);
             }
         }
+        return $this;
+    }
+
+    public function getProctoringReport(): ?array
+    {
+        return $this->proctoringReport;
+    }
+
+    public function setProctoringReport(?array $proctoringReport): self
+    {
+        $this->proctoringReport = $proctoringReport;
+        return $this;
+    }
+
+    public function isFlagged(): bool
+    {
+        return $this->isFlagged;
+    }
+
+    public function setIsFlagged(bool $isFlagged): self
+    {
+        $this->isFlagged = $isFlagged;
         return $this;
     }
 }
