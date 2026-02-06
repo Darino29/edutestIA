@@ -1,0 +1,186 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Générateur de Quiz - EduTest{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .quiz-page {
+            background-color: #ffff; /* Soft peach/white */
+            padding: 3rem 0;
+            min-height: 100vh;
+        }
+        .config-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .quiz-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            border-left: 5px solid #ff6b6b;
+            transition: transform 0.2s;
+        }
+        .quiz-card:hover {
+            transform: translateY(-2px);
+        }
+        .option-btn {
+            text-align: left;
+            margin-bottom: 0.5rem;
+            border-radius: 10px;
+            padding: 10px 20px;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+            background: #f8f9fa;
+            width: 100%;
+        }
+        .option-btn:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+        }
+        .option-btn.correct {
+            background-color: #c6f6d5 !important;
+            border-color: #48bb78 !important;
+            color: #22543d;
+        }
+        .option-btn.wrong {
+            background-color: #fed7d7 !important;
+            border-color: #f56565 !important;
+            color: #822727;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="loading-overlay" id="loader">
+    <div class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
+    <h4 class="mt-3 text-dark">Génération du Quiz en cours...</h4>
+</div>
+
+<div class="quiz-page">
+    <div class="container">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ path('app_ai_dashboard') }}" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i> Retour</a>
+            <h1 class="h2 fw-bold text-danger mb-0">Générateur de Quiz</h1>
+        </div>
+
+        {% if not quiz %}
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="config-card">
+                    <form method="post" onsubmit="document.getElementById('loader').style.display = 'flex';">
+                        <div class="mb-4">
+                            <label for="topic" class="form-label h5">Sujet du Quiz</label>
+                            <input type="text" class="form-control form-control-lg" id="topic" name="topic" placeholder="Ex: Astronomie, Verbes irréguliers anglais..." required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label h5">Difficulté</label>
+                            <div class="row g-3">
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check" name="difficulty" id="diff1" value="Facile" checked>
+                                    <label class="btn btn-outline-success w-100 py-3" for="diff1">
+                                        <i class="far fa-smile fa-2x mb-2 d-block"></i> Facile
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check" name="difficulty" id="diff2" value="Moyen">
+                                    <label class="btn btn-outline-warning w-100 py-3" for="diff2">
+                                        <i class="far fa-meh fa-2x mb-2 d-block"></i> Moyen
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <input type="radio" class="btn-check" name="difficulty" id="diff3" value="Difficile">
+                                    <label class="btn btn-outline-danger w-100 py-3" for="diff3">
+                                        <i class="far fa-dizzy fa-2x mb-2 d-block"></i> Difficile
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg rounded-pill">
+                                <i class="fas fa-play me-2"></i> Générer le Quiz
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="mb-4 d-flex justify-content-between align-items-center">
+                    <h3 class="text-secondary">Sujet : <span class="text-dark fw-bold">{{ topic }}</span></h3>
+                    <span class="badge bg-secondary">{{ difficulty }}</span>
+                </div>
+
+                <div id="quiz-container">
+                    {% for q in quiz %}
+                    <div class="quiz-card" id="question-{{ loop.index }}">
+                        <h4 class="mb-3"><span class="text-danger me-2">Q{{ loop.index }}.</span> {{ q.question }}</h4>
+                        <div class="options-list d-grid gap-2">
+                            {% for option in q.options %}
+                                <button class="btn option-btn" onclick="checkAnswer(this, '{{ q.answer|escape('js') }}')">
+                                    {{ option }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                        <div class="feedback mt-3 fw-bold" style="display:none;"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center mt-5">
+                    <a href="{{ path('app_ai_quiz') }}" class="btn btn-outline-dark rounded-pill px-4">Générer un autre Quiz</a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function checkAnswer(btn, correctAnswer) {
+                const parent = btn.closest('.quiz-card');
+                const feedback = parent.querySelector('.feedback');
+                const allBtns = parent.querySelectorAll('.option-btn');
+                
+                // Disable all buttons in this card
+                allBtns.forEach(b => {
+                    b.disabled = true;
+                    if (b.innerText.trim() === correctAnswer.trim()) {
+                        b.classList.add('correct');
+                    }
+                });
+
+                if (btn.innerText.trim() === correctAnswer.trim()) {
+                    feedback.innerText = "✨ Bravo ! Bonne réponse.";
+                    feedback.className = "feedback mt-3 fw-bold text-success";
+                } else {
+                    btn.classList.add('wrong');
+                    feedback.innerText = "❌ Incorrect.";
+                    feedback.className = "feedback mt-3 fw-bold text-danger";
+                }
+                feedback.style.display = 'block';
+            }
+        </script>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
