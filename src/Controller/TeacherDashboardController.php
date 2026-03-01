@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Exam;
 use App\Entity\Assignment;
+use Mpdf\Mpdf;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -115,6 +116,37 @@ class TeacherDashboardController extends AbstractController
             'uniqueStudentsCount' => $uniqueStudentsCount,
             'stats' => $stats,
             'recentAssignments' => $recentAssignments,
+        ]);
+    }
+
+    /**
+     * 📄 Export des résultats au format PDF
+     */
+    #[Route('/exam/{id}/export/pdf', name: 'teacher_exam_export_pdf')]
+    public function exportPdf(Exam $exam): Response
+    {
+        // 🔒 Autorisation : enseignant OU admin
+        if (!$this->isGranted('ROLE_TEACHER') && !$this->isGranted('ROLE_ADMIN')) {
+            throw $this->createAccessDeniedException('Accès refusé.');
+        }
+
+        // Génération du HTML avec Twig
+        $html = $this->renderView('admin/export_pdf.html.twig', [
+            'exam' => $exam,
+            'assignments' => $exam->getAssignments(),
+        ]);
+
+        // Création du PDF avec mPDF
+        $mpdf = new Mpdf([
+            'default_font_size' => 10,
+            'default_font' => 'dejavusans',
+        ]);
+
+        $mpdf->WriteHTML($html);
+
+        // Sortie du PDF dans le navigateur
+        return new Response($mpdf->Output("exam_{$exam->getId()}.pdf", 'I'), 200, [
+            'Content-Type' => 'application/pdf',
         ]);
     }
 }

@@ -17,6 +17,16 @@ final class ExamController extends AbstractController
     #[Route(name: 'app_exam_index', methods: ['GET'])]
     public function index(ExamRepository $examRepository): Response
     {
+        $user = $this->getUser();
+
+        // si prof connecté, on filtre
+        if ($this->isGranted('ROLE_TEACHER')) {
+            return $this->render('exam/index.html.twig', [
+                'exams' => $examRepository->findBy(['teacher' => $user], ['id' => 'DESC']),
+            ]);
+        }
+
+        // sinon (admin) tu peux garder tout
         return $this->render('exam/index.html.twig', [
             'exams' => $examRepository->findAll(),
         ]);

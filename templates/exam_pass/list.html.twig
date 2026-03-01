@@ -43,6 +43,21 @@
     .exam-actions .btn {
       min-width: 130px;
     }
+
+    .exam-duration-badge{
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .25rem .65rem;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: .8rem;
+      font-weight: 600;
+      white-space: nowrap;     
+      line-height: 1;          
+    }
+    
   </style>
 {% endblock %}
 
@@ -94,7 +109,6 @@
               <tr>
                 <td>
                   <strong>{{ a.exam.title }}</strong><br>
-                  <small class="text-muted">ID : {{ a.exam.id }}</small>
                 </td>
 
                 <td>
@@ -104,11 +118,11 @@
                     <span class="text-muted">—</span>
                   {% endif %}
                 </td>
-
                 <td class="text-center">
-                  {{ a.exam.durationMinutes }} min
+                  <span class="exam-duration-badge">
+                    <i class="bi bi-stopwatch"></i> {{ a.exam.durationMinutes }} min
+                  </span>
                 </td>
-
                 <td class="text-center">
                   {% if a.status == 'ASSIGNED' %}
                     <span class="badge bg-secondary badge-pill-soft">Non commencé</span>
@@ -149,8 +163,8 @@
   {% endif %}
 
   <div class="text-center mt-4">
-    <a href="{{ path('student_results') }}" class="btn btn-outline-primary px-4">
-      <i class="bi bi-bar-chart-fill me-1"></i> Voir mes résultats
+    <a href="{{ path('student_results') }}" class="btn btn-primary px-4">
+      Voir mes résultats
     </a>
   </div>
 </div>

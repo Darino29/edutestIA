@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>📄 Résultats de l’examen — {{ exam.title }}</title>
+    <title>Résultats de l’examen — {{ exam.title }}</title>
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -67,21 +67,31 @@
         <th>Email</th>
         <th>Note /20</th>
         <th>Date de soumission</th>
+        <th>Contrôle</th>
     </tr>
     </thead>
     <tbody>
     {% if assignments is defined and assignments|length > 0 %}
         {% for a in assignments %}
             <tr>
-                <td>{{ a.student.fullName }}</td>
-                <td>{{ a.student.email }}</td>
-                <td>{{ a.finalGrade is not null ? a.finalGrade|number_format(2, ',', ' ') : '-' }}</td>
-                <td>{{ a.submittedAt ? a.submittedAt|date('d/m/Y H:i') : '-' }}</td>
+            <td>{{ a.student.fullName }}</td>
+            <td>{{ a.student.email }}</td>
+            <td>{{ a.finalGrade is not null ? a.finalGrade|number_format(2, ',', ' ') : '-' }}</td>
+            <td>{{ a.submittedAt ? a.submittedAt|date('d/m/Y H:i') : '-' }}</td>
+            <td>
+                {% if not a.submittedAt %}
+                    -
+                {% elseif a.isFlagged %}
+                    Suspect
+                {% else %}
+                    OK
+                {% endif %}
+            </td>
             </tr>
         {% endfor %}
     {% else %}
         <tr>
-            <td colspan="4" style="text-align:center; color:#999;">Aucune copie soumise pour cet examen.</td>
+            <td colspan="5" style="text-align:center; color:#999;">Aucune copie soumise pour cet examen.</td>
         </tr>
     {% endif %}
     </tbody>

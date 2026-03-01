@@ -15,36 +15,60 @@ class AssignmentType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            // Sélection de l'examen
-            ->add('exam', EntityType::class, [
-                'class' => Exam::class,
-                'choice_label' => 'title',
-                'label' => 'Examen à affecter',
-                'attr' => ['class' => 'form-select'],
-                'placeholder' => 'Sélectionner un examen',
-            ])
+    $teacher = $options['teacher'] ?? null;
+    $exam = $options['exam'] ?? null;
 
-            // Sélection de l'étudiant
-            ->add('student', EntityType::class, [
-                'class' => User::class,
-                'choice_label' => fn(User $u) => sprintf('%s (%s)', $u->getFullName() ?: 'Utilisateur', $u->getEmail()),
-                'query_builder' => function (EntityRepository $er) {
-                    return $er->createQueryBuilder('u')
-                        ->where('u.roles LIKE :role')
-                        ->setParameter('role', '%ROLE_STUDENT%')
-                        ->orderBy('u.fullName', 'ASC');
-                },
-                'label' => 'Étudiant',
-                'attr' => ['class' => 'form-select'],
-                'placeholder' => 'Sélectionner un étudiant',
-            ]);
+    $builder->add('exam', EntityType::class, [
+        'class' => Exam::class,
+        'choice_label' => 'title',
+        'placeholder' => 'Sélectionner un examen',
+        'attr' => ['class' => 'form-select'],
+        'query_builder' => function (EntityRepository $er) use ($teacher) {
+            $qb = $er->createQueryBuilder('e')->orderBy('e.id', 'DESC');
+
+            if ($teacher) {
+                $qb->where('e.teacher = :t')->setParameter('t', $teacher);
+            }
+
+            return $qb;
+        },
+        ])
+
+        // Sélection de l'étudiant
+
+        ->add('student', EntityType::class, [
+            'class' => User::class,
+            'choice_label' => fn(User $u) =>
+                sprintf('%s (%s)', $u->getFullName() ?: 'Utilisateur', $u->getEmail()),
+            'query_builder' => function (EntityRepository $er) use ($exam) {
+                $qb = $er->createQueryBuilder('u')
+                    ->where('u.roles LIKE :role')
+                    ->setParameter('role', '%ROLE_STUDENT%')
+                    ->orderBy('u.fullName', 'ASC');
+
+                if ($exam) {
+                    $qb->andWhere('u.id NOT IN (
+                        SELECT IDENTITY(a.student)
+                        FROM App\Entity\Assignment a
+                        WHERE a.exam = :exam
+                    )')
+                    ->setParameter('exam', $exam);
+                }
+
+                return $qb;
+            },
+            'label' => 'Étudiant',
+            'attr' => ['class' => 'form-select'],
+            'placeholder' => 'Sélectionner un étudiant',
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults([
-            'data_class' => Assignment::class,
-        ]);
+    $resolver->setDefaults([
+        'data_class' => Assignment::class,
+        'teacher' => null, 
+        'exam' => null, 
+    ]);
     }
 }

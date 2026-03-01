@@ -61,6 +61,30 @@
       align-items: center;
     }
 
+    .table .btn.rounded-circle {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .table .btn.rounded-circle{
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .table .btn.rounded-circle:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(15,23,42,.12);
+    }
+    
   </style>
 {% endblock %}
 
@@ -230,19 +254,30 @@
                         <span class="badge bg-warning text-dark">Non</span>
                       {% endif %}
                     </td>
-                    <td>
-                      {% if not teacher.isApproved %}
-                        <a href="{{ path('admin_approve_user', {id: teacher.id}) }}" class="btn btn-sm btn-success me-2">
-                          <i class="bi bi-check-circle me-1"></i> Approuver
+                    <td class="text-end">
+                      <div class="d-flex justify-content-end gap-2">
+
+                        {% if not teacher.isApproved %}
+                          <a href="{{ path('admin_approve_user', {id: teacher.id}) }}"
+                            class="btn btn-sm btn-success rounded-circle"
+                            title="Approuver">
+                            <i class="bi bi-check"></i>
+                          </a>
+                        {% else %}
+                          <a href="{{ path('admin_ban_user', {id: teacher.id}) }}"
+                            class="btn btn-sm btn-secondary rounded-circle"
+                            title="Désactiver">
+                            <i class="bi bi-slash"></i>
+                          </a>
+                        {% endif %}
+
+                        <a href="{{ path('admin_delete_user', {id: teacher.id}) }}"
+                          class="btn btn-sm btn-danger rounded-circle"
+                          title="Supprimer">
+                          <i class="bi bi-trash"></i>
                         </a>
-                      {% else %}
-                        <a href="{{ path('admin_ban_user', {id: teacher.id}) }}" class="btn btn-sm btn-outline-warning me-2">
-                          <i class="bi bi-slash-circle me-1"></i> Désactiver
-                        </a>
-                      {% endif %}
-                      <a href="{{ path('admin_delete_user', {id: teacher.id}) }}" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i> Supprimer
-                      </a>
+
+                      </div>
                     </td>
                   </tr>
                 {% else %}
@@ -280,19 +315,30 @@
                         <span class="badge bg-warning text-dark">Non</span>
                       {% endif %}
                     </td>
-                    <td>
-                      {% if not student.isApproved %}
-                        <a href="{{ path('admin_approve_user', {id: student.id}) }}" class="btn btn-sm btn-success me-2">
-                          <i class="bi bi-check-circle me-1"></i> Approuver
+                    <td class="text-end">
+                      <div class="d-flex justify-content-end gap-2">
+
+                        {% if not student.isApproved %}
+                          <a href="{{ path('admin_approve_user', {id: student.id}) }}"
+                            class="btn btn-sm btn-success rounded-circle"
+                            title="Approuver">
+                            <i class="bi bi-check"></i>
+                          </a>
+                        {% else %}
+                          <a href="{{ path('admin_ban_user', {id: student.id}) }}"
+                            class="btn btn-sm btn-secondary rounded-circle"
+                            title="Désactiver">
+                            <i class="bi bi-slash"></i>
+                          </a>
+                        {% endif %}
+
+                        <a href="{{ path('admin_delete_user', {id: student.id}) }}"
+                          class="btn btn-sm btn-danger rounded-circle"
+                          title="Supprimer">
+                          <i class="bi bi-trash"></i>
                         </a>
-                      {% else %}
-                        <a href="{{ path('admin_ban_user', {id: student.id}) }}" class="btn btn-sm btn-outline-warning me-2">
-                          <i class="bi bi-slash-circle me-1"></i> Désactiver
-                        </a>
-                      {% endif %}
-                      <a href="{{ path('admin_delete_user', {id: student.id}) }}" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i> Supprimer
-                      </a>
+
+                      </div>
                     </td>
                   </tr>
                 {% else %}
@@ -371,7 +417,6 @@
                     <th class="text-center">Soumis le</th>
                     <th class="text-center">Onglet</th>
                     <th class="text-center">Copy</th>
-                    <th class="text-center">Paste</th>
                     <th class="text-center">Statut</th>
                   </tr>
                 </thead>
@@ -390,7 +435,6 @@
                       </td>
                       <td class="text-center">{{ r.tabHiddenCount ?? 0 }}</td>
                       <td class="text-center">{{ r.copyCount ?? 0 }}</td>
-                      <td class="text-center">{{ r.pasteCount ?? 0 }}</td>
                       <td class="text-center">
                         {% if assignment.isFlagged %}
                           <span class="badge bg-danger">Suspect</span>

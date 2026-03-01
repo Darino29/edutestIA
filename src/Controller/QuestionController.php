@@ -30,11 +30,14 @@ final class QuestionController extends AbstractController
     {
         $question = new Question();
 
-        // 👇 Récupération optionnelle de l’examen depuis l’URL (ex: /question/new?examId=1)
-        $examId = $request->query->get('examId');
+        $examId = $request->query->get('exam');
         if ($examId) {
             $exam = $em->getRepository(Exam::class)->find($examId);
+
             if ($exam) {
+                if ($exam->getTeacher() !== $this->getUser()) {
+                    throw $this->createAccessDeniedException();
+                }
                 $question->setExam($exam);
             }
         }
@@ -45,8 +48,6 @@ final class QuestionController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($question);
             $em->flush();
-
-            $this->addFlash('success', '✅ Question ajoutée avec succès !');
 
             // Redirection vers l’examen associé (si défini)
             if ($question->getExam()) {
@@ -80,8 +81,6 @@ final class QuestionController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
-
-            $this->addFlash('success', '✏️ Question mise à jour avec succès !');
 
             if ($question->getExam()) {
                 return $this->redirectToRoute('app_exam_show', [

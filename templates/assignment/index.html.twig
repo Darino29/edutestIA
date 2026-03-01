@@ -1,17 +1,23 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}📋 Affectations d’examens | EduTest{% endblock %}
+{% block title %}Affectations d’examens | EduTest{% endblock %}
 
 {% block body %}
 <div class="container py-5">
     <!-- En-tête -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h1 class="h4 text-primary mb-0">
-            <i class="bi bi-people-fill me-2"></i> Gestion des affectations d’examens
+            <i class="bi bi-people-fill me-2"></i>
+            {% if exam is defined and exam %}
+                Affectations — {{ exam.title }}
+            {% else %}
+                Gestion des affectations d’examens
+            {% endif %}
         </h1>
         <div class="d-flex flex-wrap gap-2">
-            <a href="{{ path('teacher_assignment_new') }}" class="btn btn-success btn-sm">
-                <i class="bi bi-plus-circle"></i> Nouvelle affectation
+            <a href="{{ path('teacher_assignment_new', exam is defined and exam ? {'exam': exam.id} : {}) }}"
+            class="btn btn-success btn-sm">
+            <i class="bi bi-plus-circle"></i> Nouvelle affectation
             </a>
             <a href="{{ path('app_exam_index') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Retour aux examens

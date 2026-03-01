@@ -20,7 +20,7 @@ class ChoiceQcmType extends AbstractType
                 'attr' => ['class' => 'form-control', 'placeholder' => 'Ex : Paris'],
             ])
             ->add('isCorrect', CheckboxType::class, [
-                'label' => 'Bonne réponse ?',
+                'label' => 'Bonne réponse  ',
                 'required' => false,
             ]);
     }
