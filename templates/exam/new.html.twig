@@ -94,6 +94,9 @@
                         <a href="{{ path('app_exam_index') }}" class="btn btn-outline-secondary">
                             Annuler
                         </a>
+                        <button type="button" class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#difficultyModal">
+                            <i class="bi bi-magic me-1"></i> Générer
+                        </button>
                         <button type="submit" class="btn btn-success px-4">
                             <i class="bi bi-check-circle me-1"></i> Créer l’examen
                         </button>
@@ -109,4 +112,46 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de sélection de difficulté -->
+<div class="modal fade" id="difficultyModal" tabindex="-1" aria-labelledby="difficultyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"> {# Ajout de modal-dialog-centered ici #}
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="difficultyModalLabel">Choisir la difficulté</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <select id="difficultySelect" class="form-select">
+          <option value="Facile">Facile</option>
+          <option value="Moyen" selected>Moyen</option>
+          <option value="Difficile">Difficile</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="confirmDifficultyBtn">Générer</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.getElementById('confirmDifficultyBtn').addEventListener('click', function() {
+    const difficulty = document.getElementById('difficultySelect').value;
+    // Ajoute un champ caché au formulaire pour la difficulté
+    let input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'difficulty';
+    input.value = difficulty;
+    document.querySelector('form').appendChild(input);
+
+    // Change l'action du formulaire pour pointer sur le endpoint IA
+    document.querySelector('form').setAttribute('action', "{{ path('app_ai_quiz') }}");
+    document.querySelector('form').submit();
+});
+</script>
 {% endblock %}

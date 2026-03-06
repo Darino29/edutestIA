@@ -17,6 +17,16 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             margin-bottom: 2rem;
         }
+        .btn-gold {
+            background-color: #FFD700;
+            border-color: #FFC107;
+            color: #212529;
+        }
+        .btn-gold:hover, .btn-gold:focus {
+            background-color: #FFC107;
+            border-color: #FFD700;
+            color: #212529;
+        }
         .result-area {
             background: white;
             border-radius: 15px;
@@ -46,7 +56,7 @@
 <div class="revision-page">
     <div class="container">
         <div class="d-flex align-items-center mb-4">
-            <a href="{{ path('app_ai_dashboard') }}" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i> Retour</a>
+            <a href="{{ path('student_exams') }}" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i> Retour</a>
             <h1 class="h2 fw-bold text-primary mb-0">Assistant de Révision</h1>
         </div>
 
@@ -79,7 +89,14 @@
         <div class="result-area">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="h4 text-muted">Fiche de révision : <span class="text-dark">{{ topic }}</span></h3>
-                <button class="btn btn-sm btn-outline-primary" onclick="window.print()"><i class="fas fa-print me-2"></i>Imprimer</button>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Imprimer
+                    </button>
+                    <button class="btn btn-sm btn-gold" id="play-audio-btn">
+                        <i class="fas fa-volume-up me-2"></i>Écouter
+                    </button>
+                </div>
             </div>
             <hr>
             <div id="markdown-output" class="markdown-content">
@@ -106,6 +123,22 @@
             const markdownText = textArea.value;
             
             document.getElementById('markdown-output').innerHTML = marked.parse(markdownText);
+            document.getElementById('play-audio-btn').addEventListener('click', function() {
+                fetch('{{ path('groq_speech') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ text: `{{ result|escape('js') }}` })
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    const audioUrl = URL.createObjectURL(blob);
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                });
+            });
         });
     </script>
     {% endif %}

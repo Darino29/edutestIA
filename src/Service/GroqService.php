@@ -10,7 +10,9 @@ use Symfony\Contracts\Cache\ItemInterface;
 class GroqService
 {
     private const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-    private const MODEL = "llama-3.3-70b-versatile"; // Modèle rapide et performant
+    // private const MODEL = "llama-3.3-70b-versatile"; // Modèle rapide et performant (très couteux en tokens)
+    private const MODEL = "llama-3.1-8b-instant"; // Modèle plus rapide et moins coûteux
+    private const SPEECH_MODEL = "canopylabs/orpheus-v1-english";
 
     public function __construct(
         private HttpClientInterface $httpClient,
@@ -39,8 +41,10 @@ class GroqService
                     'json' => [
                         'model' => self::MODEL,
                         'messages' => $messages,
-                        'temperature' => 0.7,
-                        'max_tokens' => 2048,
+                        'temperature' => 1, //0.7
+                        'max_tokens' => 1024, //2048
+                        'top_p' => 1,
+                        'stream' => false,
                     ],
                 ];
 
@@ -80,9 +84,30 @@ class GroqService
 
     public function generateQuiz(string $topic, string $difficulty): array
     {
-        $prompt = "Crée un quiz de 5 questions (QCM) sur '{$topic}' (difficulté '{$difficulty}'). " .
-                  "Réponds avec un objet JSON contenant une clé 'questions' avec un tableau de 5 questions. " .
-                  "Format: {\"questions\": [{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"answer\": \"A\"}]}";
+        $prompt = "Génère un quiz de 5 questions uniquement de type QCM sur '{$topic}' (difficulté '{$difficulty}').
+            Chaque question doit avoir exactement 4 choix, dont un seul correct.
+            Réponds avec un objet JSON contenant une clé 'questions' avec un tableau de questions, chacune au format :
+            {
+            \"question\": \"...\",
+            \"choices\": [
+                {\"text\": \"...\", \"isCorrect\": true/false},
+                ...
+            ]
+            }
+            Exemple :
+            {
+            \"questions\": [
+                {
+                \"question\": \"Quelle est la capitale de la France ?\",
+                \"choices\": [
+                    {\"text\": \"Paris\", \"isCorrect\": true},
+                    {\"text\": \"Lyon\", \"isCorrect\": false},
+                    {\"text\": \"Marseille\", \"isCorrect\": false},
+                    {\"text\": \"Nice\", \"isCorrect\": false}
+                ]
+                }
+            ]
+            }";
         
         $responseContent = $this->generateCompletion($prompt, true);
 

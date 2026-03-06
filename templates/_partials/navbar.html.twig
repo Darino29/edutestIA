@@ -66,6 +66,11 @@
           {# === ÉTUDIANT === #}
           {% if 'ROLE_STUDENT' in app.user.roles %}
             <li class="nav-item">
+              <a href="{{ path('app_ai_revision') }}" class="btn btn-gold px-3 py-1 d-flex align-items-center">
+                <i class="bi bi-robot me-2"></i> Révision
+              </a>
+            </li>
+            <li class="nav-item">
               <a href="{{ path('student_exams') }}" class="btn btn-primary px-3 py-1 d-flex align-items-center">
                 <i class="bi bi-mortarboard-fill me-2"></i> Mes examens
               </a>
