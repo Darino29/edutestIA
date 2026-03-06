@@ -123,22 +123,6 @@
             const markdownText = textArea.value;
             
             document.getElementById('markdown-output').innerHTML = marked.parse(markdownText);
-            document.getElementById('play-audio-btn').addEventListener('click', function() {
-                fetch('{{ path('groq_speech') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({ text: `{{ result|escape('js') }}` })
-                })
-                .then(response => response.blob())
-                .then(blob => {
-                    const audioUrl = URL.createObjectURL(blob);
-                    const audio = new Audio(audioUrl);
-                    audio.play();
-                });
-            });
         });
     </script>
     {% endif %}
