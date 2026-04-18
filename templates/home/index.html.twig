@@ -3,261 +3,173 @@
 
 {% block title %}EduTest – Plateforme d'examens en ligne{% endblock %}
 
-{% block body %}
-  {# HERO PRINCIPAL #}
-  <section class="hero-section text-light">
-    <div class="container">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <p class="text-uppercase mb-2 small text-white-50 fw-semibold">
-            Plateforme d’évaluation en ligne
-          </p>
-          <h1 class="display-5 fw-bold mb-3">
-            Organisez vos examens en ligne<br>
-            avec <span class="text-warning">EduTest</span>
-          </h1>
-          <p class="lead text-white-75 mb-4">
-            Création d’examens, passation sécurisée par les étudiants, correction automatique des QCM
-            et statistiques claires pour les enseignants.
-          </p>
-
-          <div class="d-flex flex-wrap gap-2 mb-3">
-            <a href="{{ path('app_login') }}" class="btn btn-light btn-lg px-4">
-              <i class="bi bi-box-arrow-in-right me-1"></i>
-              Se connecter
-            </a>
-            <a href="{{ path('app_register') }}" class="btn btn-outline-light btn-lg px-4">
-              <i class="bi bi-person-plus me-1"></i>
-              Créer un compte
-            </a>
-          </div>
-
-          <p class="small text-white-50 mb-0">
-            Déjà utilisée par <span class="fw-semibold text-white">+200</span> étudiants et
-            <span class="fw-semibold text-white">+10</span> enseignants.
-          </p>
-        </div>
-
-        <div class="col-lg-5">
-          <div class="card hero-card bg-white text-dark">
-            <div class="card-body p-4">
-              <h2 class="h5 fw-semibold mb-3">
-                Pourquoi choisir <span class="text-primary">EduTest</span> ?
-              </h2>
-
-              <ul class="list-unstyled mb-0">
-                <li class="d-flex mb-3">
-                  <div class="me-3 text-primary">
-                    <i class="bi bi-check-circle-fill fs-5"></i>
-                  </div>
-                  <div>
-                    <div class="fw-semibold">Gain de temps pour les enseignants</div>
-                    <div class="text-muted small">
-                      Création d’examens, duplication, affectation aux groupes et correction automatique des QCM.
-                    </div>
-                  </div>
-                </li>
-
-                <li class="d-flex mb-3">
-                  <div class="me-3 text-primary">
-                    <i class="bi bi-shield-lock-fill fs-5"></i>
-                  </div>
-                  <div>
-                    <div class="fw-semibold">Passation encadrée</div>
-                    <div class="text-muted small">
-                      Durée limitée, fenêtre de passage, une seule tentative par étudiant, sauvegarde des réponses.
-                    </div>
-                  </div>
-                </li>
-
-                <li class="d-flex">
-                  <div class="me-3 text-primary">
-                    <i class="bi bi-bar-chart-line-fill fs-5"></i>
-                  </div>
-                  <div>
-                    <div class="fw-semibold">Suivi des résultats</div>
-                    <div class="text-muted small">
-                      Notes par étudiant, statistiques par examen, export CSV/PDF pour archivage.
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  {# SECTION FONCTIONNALITÉS #}
-  <section class="py-5" style="background: var(--edu-bg);">
-    <div class="container">
-      <div class="text-center mb-5">
-        <h2 class="h3 fw-bold mb-2">Pensé pour les enseignants et les étudiants</h2>
-        <p class="text-muted mb-0">Un outil simple à prendre en main, adapté aux examens de BTS, Licence Pro et Master.</p>
-      </div>
-
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="card feature-card h-100 border-0 bg-white">
-            <div class="card-body p-4">
-              <div class="feature-icon bg-primary bg-opacity-10 text-primary">
-                <i class="bi bi-journal-plus"></i>
-              </div>
-              <h3 class="h5 fw-bold">Création d’examens</h3>
-              <p class="text-muted small mb-0">
-                Définissez le titre, la durée, la période, ajoutez des questions QCM ou texte libre, et affectez-les en quelques clics.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card feature-card h-100 border-0 bg-white">
-            <div class="card-body p-4">
-              <div class="feature-icon bg-success bg-opacity-10 text-success">
-                <i class="bi bi-laptop"></i>
-              </div>
-              <h3 class="h5 fw-bold">Passation étudiante</h3>
-              <p class="text-muted small mb-0">
-                Interface claire avec minuterie, gestion des réponses, validation finale unique et accès ultérieur au détail.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card feature-card h-100 border-0 bg-white">
-            <div class="card-body p-4">
-              <div class="feature-icon bg-warning bg-opacity-10 text-warning">
-                <i class="bi bi-clipboard-data"></i>
-              </div>
-              <h3 class="h5 fw-bold">Correction & statistiques</h3>
-              <p class="text-muted small mb-0">
-                Correction automatique des QCM, calcul des moyennes, écart-types et export CSV/PDF.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {# SECTION "COMMENT ÇA MARCHE" #}
-  <section class="py-5">
-    <div class="container">
-      <div class="text-center mb-4">
-        <h2 class="h4 fw-bold mb-2">Comment ça marche ?</h2>
-        <p class="text-muted small mb-0">
-          Trois étapes simples pour mettre en place vos examens en ligne.
-        </p>
-      </div>
-
-      <div class="row g-4 align-items-center">
-        <div class="col-lg-4">
-          <div class="d-flex align-items-start mb-4 gap-3">
-            <div class="step-number flex-shrink-0">1</div>
-            <div>
-              <div class="fw-bold">L’enseignant crée l’examen</div>
-              <div class="text-muted small">Il choisit les questions, la durée, la période, puis affecte l’examen aux étudiants.</div>
-            </div>
-          </div>
-          <div class="d-flex align-items-start mb-4 gap-3">
-            <div class="step-number flex-shrink-0">2</div>
-            <div>
-              <div class="fw-bold">L’étudiant passe l’épreuve</div>
-              <div class="text-muted small">Il se connecte, répond aux questions dans le temps imparti et soumet.</div>
-            </div>
-          </div>
-          <div class="d-flex align-items-start gap-3">
-            <div class="step-number flex-shrink-0">3</div>
-            <div>
-              <div class="fw-bold">Les résultats sont disponibles</div>
-              <div class="text-muted small">La plateforme corrige les QCM, calcule les notes et génère les statistiques.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-8">
-          <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body">
-              <div class="row text-center">
-                <div class="col-4 border-end">
-                  <div class="fw-bold fs-4 text-primary">+200</div>
-                  <div class="small text-muted">Étudiants</div>
-                </div>
-                <div class="col-4 border-end">
-                  <div class="fw-bold fs-4 text-primary">+10</div>
-                  <div class="small text-muted">Enseignants</div>
-                </div>
-                <div class="col-4">
-                  <div class="fw-bold fs-4 text-primary">+50</div>
-                  <div class="small text-muted">Examens gérés</div>
-                </div>
-              </div>
-              <hr>
-              <p class="small text-muted mb-0 text-center">
-                EduTest fonctionne en local (localhost) avec Symfony / MySQL, idéal pour les projets pédagogiques de niveau Bac+2 à Bac+5.
-              </p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-{% endblock %}
-
 {% block stylesheets %}
 {{ parent() }}
 <style>
   .hero-section {
-    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 60%, #6366F1 100%);
-    padding: 5rem 0 4rem;
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 55%, #6366F1 100%);
+    padding: 6rem 0 5rem;
+    text-align: center;
   }
-  .hero-card {
-    border-radius: 20px !important;
-    border: 1px solid rgba(255,255,255,.15) !important;
-    box-shadow: 0 20px 60px rgba(15,23,42,.18) !important;
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.15);
+    color: rgba(255,255,255,.9);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    padding: .3rem 1rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(6px);
   }
-  .feature-card {
-    border-radius: 16px !important;
-    border: 1px solid var(--edu-border) !important;
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 1.2rem;
+  }
+  .hero-title span { color: #FCD34D; }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,.78);
+    max-width: 520px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+  .hero-cta { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .hero-proof { font-size: .82rem; color: rgba(255,255,255,.5); }
+  .hero-proof strong { color: #fff; }
+
+  .features-section { background: var(--edu-bg); padding: 4.5rem 0; }
+  .features-eyebrow {
+    font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--edu-primary); margin-bottom: .5rem;
+  }
+  .features-title { font-size: 1.7rem; font-weight: 800; margin-bottom: .5rem; }
+  .features-sub { color: var(--edu-muted); margin-bottom: 3rem; }
+
+  .feat-card {
+    background: #fff;
+    border: 1px solid var(--edu-border);
+    border-radius: 18px;
+    padding: 2rem 1.75rem;
+    height: 100%;
     transition: transform .18s, box-shadow .18s;
   }
-  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,23,42,.1) !important; }
-  .feature-icon {
-    width: 52px; height: 52px; border-radius: 14px;
+  .feat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(15,23,42,.09); }
+  .feat-icon {
+    width: 50px; height: 50px; border-radius: 13px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; margin-bottom: 1rem;
+    font-size: 1.4rem; margin-bottom: 1.1rem;
   }
-  .step-number {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--edu-primary), var(--edu-indigo));
-    color: #fff; font-weight: 800; font-size: 1rem;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
+  .feat-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+  .feat-card p { font-size: .88rem; color: var(--edu-muted); margin: 0; line-height: 1.55; }
+
+  .stats-section { padding: 3rem 0; border-top: 1px solid var(--edu-border); }
+  .stat-item { text-align: center; }
+  .stat-value { font-size: 2rem; font-weight: 900; color: var(--edu-primary); line-height: 1; }
+  .stat-label { font-size: .82rem; color: var(--edu-muted); margin-top: .3rem; }
 </style>
 {% endblock %}
 
-{% block javascripts %}
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-<script>
-AOS.init({ duration: 800, once: true });
-document.querySelectorAll('.counter').forEach(counter => {
-  const target = +counter.dataset.count;
-  let count = 0;
-  const step = target / 80;
-  const update = () => {
-    count += step;
-    counter.textContent = Math.floor(count);
-    if (count < target) requestAnimationFrame(update);
-    else counter.textContent = target;
-  };
-  update();
-});
-</script>
+{% block body %}
+
+{# ── HERO ── #}
+<section class="hero-section">
+  <div class="container">
+    <div class="hero-badge"><i class="bi bi-mortarboard me-1"></i>Plateforme d'évaluation en ligne</div>
+    <h1 class="hero-title">
+      Vos examens,<br>organisés avec <span>EduTest</span>
+    </h1>
+    <p class="hero-sub">
+      Créez, affectez et corrigez vos examens en ligne.<br>
+      Les étudiants passent, les résultats arrivent.
+    </p>
+    <div class="hero-cta">
+      <a href="{{ path('app_login') }}" class="btn btn-light btn-lg px-5 fw-semibold">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+      </a>
+      <a href="{{ path('app_register') }}" class="btn btn-outline-light btn-lg px-5 fw-semibold">
+        <i class="bi bi-person-plus me-2"></i>Créer un compte
+      </a>
+    </div>
+    <p class="hero-proof">
+      Déjà utilisée par <strong>+200</strong> étudiants et <strong>+10</strong> enseignants
+    </p>
+  </div>
+</section>
+
+{# ── FEATURES ── #}
+<section class="features-section">
+  <div class="container">
+    <div class="text-center">
+      <div class="features-eyebrow">Fonctionnalités</div>
+      <h2 class="features-title">Tout ce qu'il vous faut</h2>
+      <p class="features-sub">Simple, rapide, adapté aux formations BTS, Licence et Master.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-4">
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(59,130,246,.1);color:#3B82F6;">
+            <i class="bi bi-journal-plus"></i>
+          </div>
+          <h3>Création d'examens</h3>
+          <p>QCM ou texte libre, durée, période — créez et affectez en quelques clics.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(34,197,94,.1);color:#16A34A;">
+            <i class="bi bi-laptop"></i>
+          </div>
+          <h3>Passation sécurisée</h3>
+          <p>Minuterie intégrée, tentative unique, détection anti-triche et sauvegarde automatique.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(245,158,11,.1);color:#D97706;">
+            <i class="bi bi-bar-chart-line"></i>
+          </div>
+          <h3>Résultats & IA</h3>
+          <p>Correction auto, stats par examen, export CSV/PDF et recommandations personnalisées par IA.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── STATS ── #}
+<section class="stats-section">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+      <div class="col-4 col-md-2">
+        <div class="stat-item">
+          <div class="stat-value">+200</div>
+          <div class="stat-label">Étudiants</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="stat-item">
+          <div class="stat-value">+10</div>
+          <div class="stat-label">Enseignants</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="stat-item">
+          <div class="stat-value">+50</div>
+          <div class="stat-label">Examens</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 {% endblock %}
+
+{% block javascripts %}{{ parent() }}{% endblock %}

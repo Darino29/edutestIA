@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Relevé de notes – {{ student.fullName }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; color: #1e293b; }
+
+    .page { max-width: 760px; margin: 2rem auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
+
+    /* Header gradient */
+    .header { background: linear-gradient(135deg, #1D4ED8 0%, #4f46e5 100%); padding: 2rem 2.5rem; display: flex; align-items: center; gap: 1.5rem; }
+    .header-logo { font-size: 2rem; color: #fff; background: rgba(255,255,255,.15); border-radius: 12px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .header-title { color: #fff; }
+    .header-title h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: .15rem; }
+    .header-title p { font-size: .8rem; opacity: .75; }
+
+    /* Student info */
+    .student-section { display: flex; align-items: center; gap: 1.5rem; padding: 1.75rem 2.5rem; border-bottom: 1px solid #e5e7eb; }
+    .avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3B82F6, #6366F1); color: #fff; font-size: 1.8rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border: 3px solid #e5e7eb; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .student-info h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: .2rem; }
+    .student-info p { font-size: .82rem; color: #64748b; margin-bottom: .15rem; }
+    .student-info .badge { display: inline-block; background: rgba(59,130,246,.1); color: #2563eb; border-radius: 999px; padding: .2rem .65rem; font-size: .72rem; font-weight: 700; margin-top: .2rem; }
+
+    /* Stats row */
+    .stats-row { display: flex; gap: 0; border-bottom: 1px solid #e5e7eb; }
+    .stat-box { flex: 1; text-align: center; padding: .9rem 1rem; border-right: 1px solid #e5e7eb; }
+    .stat-box:last-child { border-right: none; }
+    .stat-box .val { font-size: 1.4rem; font-weight: 800; color: #2563eb; }
+    .stat-box .lbl { font-size: .72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-top: .1rem; }
+
+    /* Table */
+    .table-section { padding: 1.5rem 2.5rem 2rem; }
+    .table-section h3 { font-size: .88rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #64748b; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f1f5f9; }
+    thead th { padding: .65rem 1rem; font-size: .78rem; font-weight: 700; text-align: left; color: #475569; text-transform: uppercase; letter-spacing: .05em; }
+    tbody tr { border-bottom: 1px solid #f1f5f9; }
+    tbody tr:last-child { border-bottom: none; }
+    td { padding: .75rem 1rem; font-size: .88rem; }
+    .grade-pill { display: inline-block; border-radius: 999px; padding: .2rem .7rem; font-size: .8rem; font-weight: 700; min-width: 52px; text-align: center; }
+    .grade-high   { background: rgba(34,197,94,.12); color: #16a34a; }
+    .grade-mid    { background: rgba(245,158,11,.12); color: #d97706; }
+    .grade-low    { background: rgba(239,68,68,.12);  color: #dc2626; }
+    .grade-none   { background: #f1f5f9; color: #94a3b8; }
+    .mention      { font-size: .72rem; color: #94a3b8; }
+
+    /* Footer */
+    .footer { background: #f8fafc; border-top: 1px solid #e5e7eb; padding: 1rem 2.5rem; display: flex; justify-content: space-between; align-items: center; font-size: .75rem; color: #94a3b8; }
+
+    /* Print button — hidden when printing */
+    .print-bar { text-align: center; padding: 1.5rem; background: #f4f6fb; }
+    .print-bar button { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: .6rem 1.5rem; font-size: .9rem; font-weight: 600; cursor: pointer; margin: 0 .4rem; }
+    .print-bar button.secondary { background: #e5e7eb; color: #374151; }
+
+    @media print {
+      body { background: #fff; }
+      .print-bar { display: none; }
+      .page { box-shadow: none; border-radius: 0; margin: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="print-bar">
+  <button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
+  <button class="secondary" onclick="window.close()">✕ Fermer</button>
+</div>
+
+<div class="page">
+
+  {# ── EN-TÊTE ── #}
+  <div class="header">
+    <div class="header-logo">🎓</div>
+    <div class="header-title">
+      <h1>Relevé de notes officiel</h1>
+      <p>EduTest – Plateforme d'évaluation en ligne</p>
+    </div>
+  </div>
+
+  {# ── ÉTUDIANT ── #}
+  <div class="student-section">
+    <div class="avatar">
+      {% if student.profilePicture %}
+        <img src="{{ absolute_url(asset('uploads/avatars/' ~ student.profilePicture)) }}" alt="photo">
+      {% else %}
+        {{ (student.fullName ?? student.userIdentifier)|first|upper }}
+      {% endif %}
+    </div>
+    <div class="student-info">
+      <h2>{{ student.fullName }}</h2>
+      <p>{{ student.email }}</p>
+      {% if student.studentNumber %}<p>N° étudiant : {{ student.studentNumber }}</p>{% endif %}
+      {% if student.classe %}
+        <span class="badge">{{ student.classe.level }} {{ student.classe.name }} – Année {{ student.classe.year }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── STATISTIQUES ── #}
+  {% set submitted = assignments|filter(a => a.finalGrade is not null) %}
+  {% set totalGrade = 0 %}
+  {% for a in submitted %}{% set totalGrade = totalGrade + a.finalGrade %}{% endfor %}
+  {% set avg = submitted|length > 0 ? (totalGrade / submitted|length)|round(2) : null %}
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="val">{{ assignments|length }}</div>
+      <div class="lbl">Examens passés</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" style="color:{% if avg >= 10 %}#16a34a{% else %}#dc2626{% endif %}">
+        {{ avg is not null ? avg|number_format(2, ',') : '—' }}
+      </div>
+      <div class="lbl">Moyenne générale / 20</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" style="color:#16a34a;">{{ submitted|filter(a => a.finalGrade >= 10)|length }}</div>
+      <div class="lbl">Examens réussis</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" style="color:#dc2626;">{{ submitted|filter(a => a.finalGrade < 10)|length }}</div>
+      <div class="lbl">Examens à repasser</div>
+    </div>
+  </div>
+
+  {# ── TABLEAU ── #}
+  <div class="table-section">
+    <h3>Détail des résultats</h3>
+    {% if assignments is empty %}
+      <p style="color:#94a3b8;text-align:center;padding:2rem;">Aucun examen soumis.</p>
+    {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th>Examen</th>
+          <th>Date</th>
+          <th style="text-align:center;">Note /20</th>
+          <th style="text-align:center;">Mention</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+          {% set g = a.finalGrade %}
+          <tr>
+            <td><strong>{{ a.exam.title }}</strong></td>
+            <td>{{ a.submittedAt ? a.submittedAt|date('d/m/Y') : '—' }}</td>
+            <td style="text-align:center;">
+              {% if g is not null %}
+                <span class="grade-pill {% if g >= 16 %}grade-high{% elseif g >= 10 %}grade-mid{% else %}grade-low{% endif %}">
+                  {{ g|number_format(2, ',') }}
+                </span>
+              {% else %}
+                <span class="grade-pill grade-none">—</span>
+              {% endif %}
+            </td>
+            <td style="text-align:center;" class="mention">
+              {% if g is not null %}
+                {% if g >= 16 %}Très bien
+                {% elseif g >= 14 %}Bien
+                {% elseif g >= 12 %}Assez bien
+                {% elseif g >= 10 %}Passable
+                {% else %}Insuffisant{% endif %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+  {# ── PIED ── #}
+  <div class="footer">
+    <span>Généré le {{ generatedAt|date('d/m/Y à H:i') }}</span>
+    <span>EduTest – Document non officiel à titre informatif</span>
+  </div>
+
+</div>
+</body>
+</html>

@@ -43,6 +43,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $profilePicture = null;
 
+    #[ORM\ManyToOne(targetEntity: Classe::class, inversedBy: 'students')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Classe $classe = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -163,6 +167,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getProfilePicture(): ?string { return $this->profilePicture; }
     public function setProfilePicture(?string $profilePicture): static { $this->profilePicture = $profilePicture; return $this; }
+
+    public function getClasse(): ?Classe { return $this->classe; }
+    public function setClasse(?Classe $classe): static { $this->classe = $classe; return $this; }
     public function regenerateApiToken(): string
     {
         $this->apiToken = bin2hex(random_bytes(32));

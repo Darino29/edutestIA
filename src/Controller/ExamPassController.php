@@ -189,6 +189,29 @@ class ExamPassController extends AbstractController
         ]);
     }
 
+    #[Route('/transcript', name: 'student_transcript')]
+    public function transcript(EntityManagerInterface $em): Response
+    {
+        $student = $this->getUser();
+
+        $assignments = $em->getRepository(Assignment::class)
+            ->createQueryBuilder('a')
+            ->leftJoin('a.exam', 'e')->addSelect('e')
+            ->where('a.student = :student')
+            ->andWhere('a.status = :status')
+            ->setParameter('student', $student)
+            ->setParameter('status', 'SUBMITTED')
+            ->orderBy('a.submittedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('exam_pass/transcript.html.twig', [
+            'student'     => $student,
+            'assignments' => $assignments,
+            'generatedAt' => new \DateTimeImmutable(),
+        ]);
+    }
+
     #[Route('/result/{id}', name: 'student_result_detail')]
     public function resultDetail(Assignment $assignment): Response
     {

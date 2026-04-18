@@ -22,6 +22,7 @@
         .bar-wrap { flex: 1; }
         .score-label { font-size: 0.9rem; font-weight: 700; white-space: nowrap; min-width: 48px; text-align: right; }
         .empty-state { text-align: center; padding: 3rem 1rem; color: #6c757d; }
+        .exam-chip { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; min-width:28px; height:28px; padding:0 .55rem; font-size:.78rem; font-weight:700; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -53,23 +54,30 @@
     {% else %}
 
     {# ============ RÉSUMÉ GLOBAL ============ #}
+    {% set pctMastered    = totalTopics > 0 ? (progress.mastered|length    / totalTopics * 100)|round : 0 %}
+    {% set pctInProgress  = totalTopics > 0 ? (progress.inProgress|length  / totalTopics * 100)|round : 0 %}
+    {% set pctToWork      = totalTopics > 0 ? (progress.toWork|length      / totalTopics * 100)|round : 0 %}
+
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="section-card text-center h-100" style="border-top: 4px solid #22c55e;">
                 <div class="display-4 fw-bold text-success">{{ progress.mastered|length }}</div>
-                <div class="text-muted">Maîtrisées <span class="text-success fw-semibold">(≥ 75%)</span></div>
+                <div class="fs-5 fw-bold text-success mb-1">{{ pctMastered }}%</div>
+                <div class="text-muted small">Maîtrisées <span class="fw-semibold">(≥ 75%)</span></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="section-card text-center h-100" style="border-top: 4px solid #f59e0b;">
                 <div class="display-4 fw-bold text-warning">{{ progress.inProgress|length }}</div>
-                <div class="text-muted">En progression <span class="text-warning fw-semibold">(50–74%)</span></div>
+                <div class="fs-5 fw-bold text-warning mb-1">{{ pctInProgress }}%</div>
+                <div class="text-muted small">En progression <span class="fw-semibold">(50–74%)</span></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="section-card text-center h-100" style="border-top: 4px solid #ef4444;">
                 <div class="display-4 fw-bold text-danger">{{ progress.toWork|length }}</div>
-                <div class="text-muted">À travailler <span class="text-danger fw-semibold">(&lt; 50%)</span></div>
+                <div class="fs-5 fw-bold text-danger mb-1">{{ pctToWork }}%</div>
+                <div class="text-muted small">À travailler <span class="fw-semibold">(&lt; 50%)</span></div>
             </div>
         </div>
     </div>
@@ -92,13 +100,13 @@
                 <h5 class="fw-bold text-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Compétences maîtrisées</h5>
                 {% for item in progress.mastered %}
                 <div class="skill-card">
-                    <div class="skill-icon bg-success bg-opacity-10 text-success">
+                    <div class="skill-icon" style="background:rgba(34,197,94,.12);color:#16a34a;">
                         <i class="bi bi-trophy-fill"></i>
                     </div>
                     <div class="bar-wrap">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="fw-semibold small">{{ item.topic }}</span>
-                            <span class="stat-pill bg-success bg-opacity-10 text-success">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                            <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;min-width:26px;height:26px;padding:0 6px;font-size:.78rem;font-weight:700;background:#bbf7d0;color:#14532d;">{{ item.examsCount }}</span>
                         </div>
                         <div class="progress" style="height: 8px;">
                             <div class="progress-bar bg-success" style="width: {{ item.score }}%"></div>
@@ -116,13 +124,13 @@
                 <h5 class="fw-bold text-warning mb-3"><i class="bi bi-arrow-up-circle-fill me-2"></i>En progression</h5>
                 {% for item in progress.inProgress %}
                 <div class="skill-card">
-                    <div class="skill-icon bg-warning bg-opacity-10 text-warning">
+                    <div class="skill-icon" style="background:rgba(245,158,11,.12);color:#d97706;">
                         <i class="bi bi-lightning-charge-fill"></i>
                     </div>
                     <div class="bar-wrap">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="fw-semibold small">{{ item.topic }}</span>
-                            <span class="stat-pill bg-warning bg-opacity-10 text-warning">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                            <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;min-width:26px;height:26px;padding:0 6px;font-size:.78rem;font-weight:700;background:#fde68a;color:#78350f;">{{ item.examsCount }}</span>
                         </div>
                         <div class="progress" style="height: 8px;">
                             <div class="progress-bar bg-warning" style="width: {{ item.score }}%"></div>
@@ -140,15 +148,15 @@
                 <h5 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-circle-fill me-2"></i>À travailler en priorité</h5>
                 {% for item in progress.toWork %}
                 <div class="skill-card">
-                    <div class="skill-icon bg-danger bg-opacity-10 text-danger">
+                    <div class="skill-icon" style="background:rgba(239,68,68,.12);color:#dc2626;">
                         <i class="bi bi-x-circle-fill"></i>
                     </div>
                     <div class="bar-wrap">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="fw-semibold small">{{ item.topic }}</span>
                             <div class="d-flex gap-1">
-                                <span class="stat-pill bg-danger bg-opacity-10 text-danger">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
-                                <a href="{{ path('app_ai_revision') }}" class="stat-pill bg-primary bg-opacity-10 text-primary text-decoration-none">
+                                <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;min-width:26px;height:26px;padding:0 6px;font-size:.78rem;font-weight:700;background:#fecaca;color:#7f1d1d;">{{ item.examsCount }}</span>
+                                <a href="{{ path('app_ai_revision') }}" class="stat-pill text-decoration-none" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
                                     <i class="bi bi-robot me-1"></i>Réviser
                                 </a>
                             </div>
@@ -217,7 +225,18 @@
             },
             options: {
                 cutout: '65%',
-                plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } }
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 12 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                                return '  ' + ctx.label + ' : ' + ctx.parsed + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
             }
         });
         {% endif %}

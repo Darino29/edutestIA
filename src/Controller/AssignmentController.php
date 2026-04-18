@@ -3,10 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Assignment;
+use App\Entity\Classe;
 use App\Entity\Exam;
 use App\Entity\User;
 use App\Form\AssignmentType;
 use App\Repository\AssignmentRepository;
+use App\Repository\ClasseRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -126,6 +128,69 @@ final class AssignmentController extends AbstractController
             'exam' => $exam,
         ]);
     } */
+
+    #[Route('/assign-class', name: 'teacher_assignment_assign_class', methods: ['GET', 'POST'])]
+    public function assignClass(Request $request, EntityManagerInterface $em, ClasseRepository $classeRepo): Response
+    {
+        $exams   = $em->getRepository(Exam::class)->findBy(['teacher' => $this->getUser()]);
+        $classes = $classeRepo->findAllOrderedByLevel();
+        $created = 0;
+        $skipped = 0;
+
+        if ($request->isMethod('POST')) {
+            $examId   = (int) $request->request->get('exam');
+            $classeId = (int) $request->request->get('classe');
+
+            $exam   = $em->getRepository(Exam::class)->find($examId);
+            $classe = $classeRepo->find($classeId);
+
+            if (!$exam || $exam->getTeacher() !== $this->getUser()) {
+                $this->addFlash('danger', 'Examen invalide.');
+                return $this->redirectToRoute('teacher_assignment_assign_class');
+            }
+
+            if (!$classe || $classe->getStudents()->isEmpty()) {
+                $this->addFlash('warning', 'Cette classe ne contient aucun étudiant.');
+                return $this->redirectToRoute('teacher_assignment_assign_class');
+            }
+
+            foreach ($classe->getStudents() as $student) {
+                // Vérifier si déjà affecté
+                $exists = $em->getRepository(Assignment::class)->findOneBy([
+                    'exam'    => $exam,
+                    'student' => $student,
+                ]);
+
+                if ($exists) {
+                    $skipped++;
+                    continue;
+                }
+
+                $assignment = new Assignment();
+                $assignment->setExam($exam);
+                $assignment->setStudent($student);
+                $assignment->setStatus('ASSIGNED');
+                $assignment->setAssignedAt(new \DateTimeImmutable());
+                $em->persist($assignment);
+                $created++;
+            }
+
+            $em->flush();
+
+            if ($created > 0) {
+                $this->addFlash('success', "✅ {$created} affectation(s) créée(s) pour la classe « {$classe->getFullLabel()} »." . ($skipped > 0 ? " {$skipped} déjà affecté(s), ignoré(s)." : ''));
+            } else {
+                $this->addFlash('warning', 'Tous les étudiants de cette classe avaient déjà cet examen affecté.');
+            }
+
+            return $this->redirectToRoute('teacher_assignment_index');
+        }
+
+        return $this->render('assignment/assign_class.html.twig', [
+            'exams'   => $exams,
+            'classes' => $classes,
+        ]);
+    }
 
     #[Route('/{id}/delete', name: 'teacher_assignment_delete', methods: ['POST'])]
     public function delete(Request $request, Assignment $assignment, EntityManagerInterface $em): Response

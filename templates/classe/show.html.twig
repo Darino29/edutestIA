@@ -1,0 +1,158 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ classe.fullLabel }} – EduTest{% endblock %}
+
+{% block stylesheets %}{{ parent() }}
+<style>
+  .page { padding: 2.5rem 0; min-height: 100vh; }
+  .section-card { background:#fff; border-radius:16px; padding:1.75rem; box-shadow:var(--edu-shadow); margin-bottom:1.5rem; border:1px solid var(--edu-border); }
+  .student-row { display:flex; align-items:center; justify-content:space-between; padding:.75rem 0; border-bottom:1px solid var(--edu-border); }
+  .student-row:last-child { border-bottom:none; }
+  .student-avatar { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--edu-primary),var(--edu-indigo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page">
+<div class="container">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ path('admin_classes_index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
+      <div>
+        <h1 class="h2 fw-bold text-primary mb-0">{{ classe.level }} – {{ classe.name }}</h1>
+        <p class="text-muted small mb-0">{{ classe.academicYear }} · Année {{ classe.year }} · {{ classe.students|length }} étudiant{{ classe.students|length > 1 ? 's' : '' }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ path('admin_classes_edit', {id: classe.id}) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>Modifier
+      </a>
+      <form method="post" action="{{ path('admin_classes_delete', {id: classe.id}) }}"
+            onsubmit="return confirm('Supprimer cette classe ? Les étudiants ne seront pas supprimés.')">
+        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Supprimer</button>
+      </form>
+    </div>
+  </div>
+
+  {% for message in app.flashes('success') %}
+    <div class="alert alert-success rounded-3">{{ message }}</div>
+  {% endfor %}
+
+  <div class="row g-4">
+
+    {# LISTE ÉTUDIANTS #}
+    <div class="col-lg-7">
+      <div class="section-card">
+        <h5 class="fw-bold mb-3"><i class="bi bi-people-fill me-2"></i>Étudiants de la classe</h5>
+        {% if classe.students is empty %}
+          <p class="text-muted text-center py-3">Aucun étudiant dans cette classe.</p>
+        {% else %}
+          <div id="students-list">
+          {% for student in classe.students %}
+            <div class="student-row" id="row-{{ student.id }}">
+              <div class="d-flex align-items-center gap-3">
+                <div class="student-avatar">{{ student.fullName|first|upper }}</div>
+                <div>
+                  <div class="fw-semibold small">{{ student.fullName }}</div>
+                  <div class="text-muted" style="font-size:.75rem;">{{ student.email }}</div>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-outline-danger" onclick="removeStudent({{ student.id }}, this)">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# AJOUTER UN ÉTUDIANT #}
+    <div class="col-lg-5">
+      <div class="section-card">
+        <h5 class="fw-bold mb-3"><i class="bi bi-person-plus-fill me-2"></i>Ajouter un étudiant</h5>
+        {% if availableStudents is empty %}
+          <p class="text-muted small">Aucun étudiant disponible (tous déjà dans une classe).</p>
+        {% else %}
+          <div class="mb-3">
+            <input type="text" class="form-control form-control-sm" id="student-search"
+                   placeholder="Rechercher un étudiant..." oninput="filterStudents()">
+          </div>
+          <div id="student-select" style="max-height:260px;overflow-y:auto;">
+            {% for student in availableStudents %}
+              <div class="student-row student-option" data-name="{{ student.fullName|lower }}" data-email="{{ student.email|lower }}">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="student-avatar" style="width:30px;height:30px;font-size:.75rem;">{{ student.fullName|first|upper }}</div>
+                  <div>
+                    <div class="fw-semibold small">{{ student.fullName }}</div>
+                    <div class="text-muted" style="font-size:.72rem;">{{ student.email }}</div>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-outline-success" onclick="addStudent({{ student.id }}, this)">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block javascripts %}{{ parent() }}
+<script>
+const classeId = {{ classe.id }};
+
+async function addStudent(studentId, btn) {
+  btn.disabled = true;
+  const fd = new FormData();
+  fd.append('studentId', studentId);
+  const res  = await fetch(`/admin/classes/${classeId}/add-student`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) {
+    btn.closest('.student-option').remove();
+    const list = document.getElementById('students-list');
+    if (list) {
+      list.insertAdjacentHTML('beforeend', `
+        <div class="student-row" id="row-${data.student.id}">
+          <div class="d-flex align-items-center gap-3">
+            <div class="student-avatar">${data.student.fullName[0].toUpperCase()}</div>
+            <div>
+              <div class="fw-semibold small">${data.student.fullName}</div>
+              <div class="text-muted" style="font-size:.75rem;">${data.student.email}</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="removeStudent(${data.student.id}, this)">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>`);
+    }
+  } else {
+    alert(data.error || 'Erreur.'); btn.disabled = false;
+  }
+}
+
+async function removeStudent(studentId, btn) {
+  if (!confirm('Retirer cet étudiant de la classe ?')) return;
+  btn.disabled = true;
+  const res  = await fetch(`/admin/classes/${classeId}/remove-student/${studentId}`, { method: 'POST' });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('row-' + studentId)?.remove();
+  } else {
+    alert(data.error || 'Erreur.'); btn.disabled = false;
+  }
+}
+
+function filterStudents() {
+  const q = document.getElementById('student-search').value.toLowerCase();
+  document.querySelectorAll('.student-option').forEach(el => {
+    el.style.display = (el.dataset.name.includes(q) || el.dataset.email.includes(q)) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

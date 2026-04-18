@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+{% block title %}Affecter un examen à une classe – EduTest{% endblock %}
+
+{% block stylesheets %}{{ parent() }}
+<style>
+  .page { padding: 2.5rem 0; min-height: 100vh; }
+  .form-card { background:#fff; border-radius:16px; padding:2rem; box-shadow:var(--edu-shadow); max-width:580px; margin:0 auto; border:1px solid var(--edu-border); }
+  .class-option { border-radius:10px; border:1.5px solid var(--edu-border); padding:.75rem 1rem; cursor:pointer; transition:all .15s; margin-bottom:.5rem; }
+  .class-option:hover, .class-option.selected { border-color:var(--edu-primary); background:#EFF6FF; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page">
+<div class="container">
+  <div class="d-flex align-items-center mb-4">
+    <a href="{{ path('teacher_assignment_index') }}" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <div>
+      <h1 class="h2 fw-bold text-primary mb-0"><i class="bi bi-building me-2"></i>Affecter à une classe</h1>
+      <p class="text-muted small mb-0">Assigne un examen à tous les étudiants d'une classe en un clic</p>
+    </div>
+  </div>
+
+  {% for message in app.flashes('success') %}<div class="alert alert-success rounded-3">{{ message }}</div>{% endfor %}
+  {% for message in app.flashes('warning') %}<div class="alert alert-warning rounded-3">{{ message }}</div>{% endfor %}
+  {% for message in app.flashes('danger') %}<div class="alert alert-danger rounded-3">{{ message }}</div>{% endfor %}
+
+  <div class="form-card">
+    {% if classes is empty %}
+      <div class="text-center py-4 text-muted">
+        <i class="bi bi-building fs-1 mb-3 d-block"></i>
+        <p>Aucune classe n'existe encore. Demandez à l'administrateur d'en créer une.</p>
+      </div>
+    {% elseif exams is empty %}
+      <div class="text-center py-4 text-muted">
+        <i class="bi bi-journal-x fs-1 mb-3 d-block"></i>
+        <p>Vous n'avez pas encore créé d'examen.</p>
+        <a href="{{ path('app_exam_new') }}" class="btn btn-primary">Créer un examen</a>
+      </div>
+    {% else %}
+      <form method="post">
+        <div class="mb-4">
+          <label class="form-label fw-bold">Examen à affecter</label>
+          <select class="form-select" name="exam" required>
+            <option value="">-- Choisir un examen --</option>
+            {% for exam in exams %}
+              <option value="{{ exam.id }}">{{ exam.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Classe destinataire</label>
+          <select class="form-select" name="classe" required>
+            <option value="">-- Choisir une classe --</option>
+            {% for classe in classes %}
+              <option value="{{ classe.id }}">
+                {{ classe.fullLabel }} ({{ classe.students|length }} étudiant{{ classe.students|length > 1 ? 's' : '' }})
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Les étudiants déjà affectés à cet examen seront ignorés automatiquement.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2">
+          <i class="bi bi-send-fill me-2"></i>Affecter à toute la classe
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+{% block title %}Nouvelle classe – EduTest{% endblock %}
+
+{% block stylesheets %}{{ parent() }}
+<style>
+  .page { padding: 2.5rem 0; min-height: 100vh; }
+  .form-card { background:#fff; border-radius:16px; padding:2rem; box-shadow:var(--edu-shadow); max-width:560px; margin:0 auto; border:1px solid var(--edu-border); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page">
+<div class="container">
+  <div class="d-flex align-items-center mb-4">
+    <a href="{{ path('admin_classes_index') }}" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h1 class="h2 fw-bold text-primary mb-0">Nouvelle classe</h1>
+  </div>
+
+  {% for message in app.flashes('danger') %}
+    <div class="alert alert-danger rounded-3 mb-3">{{ message }}</div>
+  {% endfor %}
+
+  <div class="form-card">
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Filière / Niveau</label>
+        <select class="form-select" name="level" required>
+          {% for value, label in levels %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Nom de la classe</label>
+        <input type="text" class="form-control" name="name" placeholder="Ex : SIO SLAM, Informatique, Gestion..." required>
+        <div class="form-text">Le nom spécifique de la spécialité ou du groupe.</div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold">Année</label>
+          <select class="form-select" name="year">
+            <option value="1">1ère année</option>
+            <option value="2">2ème année</option>
+            <option value="3">3ème année</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">Année scolaire</label>
+          <input type="text" class="form-control" name="academicYear" value="{{ academicYear }}" pattern="\\d{4}-\\d{4}" placeholder="2025-2026" required>
+        </div>
+      </div>
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{{ path('admin_classes_index') }}" class="btn btn-outline-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-check-lg me-2"></i>Créer la classe
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+{% endblock %}

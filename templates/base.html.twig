@@ -56,13 +56,38 @@
         transition: box-shadow 0.2s;
       }
 
+      @keyframes logo-float {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(-3px); }
+      }
+      @keyframes logo-glow {
+        0%, 100% { box-shadow: 0 2px 8px rgba(59,130,246,.35); }
+        50%       { box-shadow: 0 4px 18px rgba(99,102,241,.6); }
+      }
+      @keyframes logo-toss {
+        0%   { transform: rotate(0deg) scale(1); }
+        20%  { transform: rotate(-12deg) scale(1.1) translateY(-4px); }
+        40%  { transform: rotate(14deg) scale(1.15) translateY(-8px); }
+        60%  { transform: rotate(-8deg) scale(1.1) translateY(-4px); }
+        80%  { transform: rotate(4deg) scale(1.05); }
+        100% { transform: rotate(0deg) scale(1); }
+      }
+
       .navbar-logo-icon {
         width: 34px; height: 34px;
         background: linear-gradient(135deg, var(--edu-primary), var(--edu-indigo));
         border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
         color: #fff; font-size: 1.1rem;
-        box-shadow: 0 2px 8px rgba(59,130,246,.35);
+        animation: logo-float 3s ease-in-out infinite, logo-glow 3s ease-in-out infinite;
+        transition: transform 0.15s;
+      }
+      .navbar-logo-icon i {
+        display: inline-block;
+        transition: transform 0.15s;
+      }
+      .navbar-brand:hover .navbar-logo-icon i {
+        animation: logo-toss 0.7s ease forwards;
       }
 
       .navbar-brand-text {

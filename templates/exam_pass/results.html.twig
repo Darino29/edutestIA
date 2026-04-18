@@ -65,9 +65,12 @@
         <h5 class="mb-0 text-primary">
           <i class="bi bi-journal-check me-2"></i> Résultats d’examens
         </h5>
-        <span class="text-muted small">
-          Total : <strong>{{ assignments.getTotalItemCount ?? assignments|length }}</strong>
-        </span>
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-muted small">Total : <strong>{{ assignments.getTotalItemCount ?? assignments|length }}</strong></span>
+          <a href="{{ path('student_transcript') }}" class="btn btn-sm btn-outline-primary" target="_blank">
+            <i class="bi bi-file-earmark-text me-1"></i>Relevé de notes
+          </a>
+        </div>
       </div>
 
       <div class="card-body p-0">
