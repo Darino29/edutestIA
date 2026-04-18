@@ -1,0 +1,132 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapport IA – Administration EduTest{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  .insights-page { padding: 3rem 0; min-height: 100vh; }
+  .section-card  { background: #fff; border-radius: 16px; padding: 1.75rem; box-shadow: var(--edu-shadow); margin-bottom: 1.5rem; }
+  .report-content h2 { color: var(--edu-indigo); font-size: 1.25rem; margin-top: 1.5rem; border-bottom: 2px solid var(--edu-border); padding-bottom: 0.4rem; }
+  .report-content h3 { color: var(--edu-primary); font-size: 1.05rem; margin-top: 1rem; }
+  .report-content ul  { padding-left: 1.4rem; margin-bottom: 0.75rem; }
+  .report-content li  { margin-bottom: 0.4rem; }
+  .report-content strong { color: var(--edu-text); }
+  .stat-box { border-radius: 14px; padding: 1.25rem; text-align: center; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="insights-page">
+<div class="container">
+
+  <div class="d-flex align-items-center mb-4">
+    <a href="{{ path('admin_dashboard') }}" class="btn btn-outline-secondary me-3">
+      <i class="fas fa-arrow-left"></i> Retour
+    </a>
+    <div>
+      <h1 class="h2 fw-bold text-primary mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Rapport IA – Analyse de la plateforme</h1>
+      <small class="text-muted">Généré le {{ "now"|date("d/m/Y à H:i") }}</small>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm ms-auto" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Imprimer
+    </button>
+  </div>
+
+  {# Statistiques rapides #}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-box section-card" style="border-top: 4px solid var(--edu-primary);">
+        <div class="h3 fw-bold text-primary mb-1">{{ stats.totalStudents }}</div>
+        <div class="text-muted small">Étudiants</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box section-card" style="border-top: 4px solid var(--edu-indigo);">
+        <div class="h3 fw-bold mb-1" style="color:var(--edu-indigo)">{{ stats.totalTeachers }}</div>
+        <div class="text-muted small">Enseignants</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box section-card" style="border-top: 4px solid var(--edu-success);">
+        <div class="h3 fw-bold text-success mb-1">{{ stats.avgScore }}%</div>
+        <div class="text-muted small">Score moyen global</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box section-card" style="border-top: 4px solid var(--edu-danger);">
+        <div class="h3 fw-bold text-danger mb-1">{{ stats.strugglingStudents }}</div>
+        <div class="text-muted small">Étudiants en difficulté</div>
+      </div>
+    </div>
+  </div>
+
+  {% if stats.weakTopics is not empty %}
+  <div class="section-card mb-4">
+    <h5 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Sujets les plus échoués</h5>
+    <div class="d-flex flex-wrap gap-2">
+      {% for topic in stats.weakTopics %}
+        <span class="badge bg-danger bg-opacity-15 text-danger" style="font-size:.85rem; padding:.4rem .8rem; border-radius:8px;">{{ topic }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# Rapport IA #}
+  <div class="section-card">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <span class="fs-2">🤖</span>
+        <div>
+          <h5 class="fw-bold mb-0">Analyse et recommandations IA</h5>
+          <small class="text-muted">Basé sur les données réelles de la plateforme</small>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-warning" id="play-btn">
+          <i class="fas fa-volume-up me-1"></i>Écouter
+        </button>
+        <button class="btn btn-sm btn-outline-danger d-none" id="stop-btn">
+          <i class="fas fa-stop me-1"></i>Stop
+        </button>
+      </div>
+    </div>
+    <hr>
+    <div id="report-output" class="report-content"></div>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const ta = document.createElement('textarea');
+  ta.innerHTML = `{{ report|escape('js') }}`;
+  const text = ta.value;
+  document.getElementById('report-output').innerHTML = marked.parse(text);
+
+  const playBtn = document.getElementById('play-btn');
+  const stopBtn = document.getElementById('stop-btn');
+
+  playBtn.addEventListener('click', function () {
+    if (speechSynthesis.speaking) return;
+    const plain = text.replace(/[#*_`~>\-]/g, '').trim();
+    const utt = new SpeechSynthesisUtterance(plain);
+    utt.lang = 'fr-FR'; utt.rate = 0.92;
+    utt.onend  = () => stopBtn.classList.add('d-none');
+    utt.onerror = () => stopBtn.classList.add('d-none');
+    stopBtn.classList.remove('d-none');
+    speechSynthesis.speak(utt);
+  });
+
+  stopBtn.addEventListener('click', function () {
+    speechSynthesis.cancel();
+    this.classList.add('d-none');
+  });
+});
+</script>
+{% endblock %}

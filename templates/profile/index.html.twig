@@ -1,0 +1,186 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon profil – EduTest{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+  .profile-page { padding: 3rem 0; min-height: 100vh; }
+  .profile-card { background: #fff; border-radius: 20px; padding: 2.5rem; box-shadow: var(--edu-shadow); max-width: 520px; margin: 0 auto; }
+  .avatar-large {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--edu-primary), var(--edu-indigo));
+    color: #fff; font-size: 2.8rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto; position: relative; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(59,130,246,.3);
+    cursor: pointer; transition: box-shadow 0.2s;
+  }
+  .avatar-large img { width:100%; height:100%; object-fit:cover; }
+  .avatar-large:hover .avatar-overlay { opacity: 1; }
+  .avatar-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; font-size: 1.6rem;
+    flex-direction: column; gap: 4px;
+  }
+  .avatar-overlay small { font-size: 0.7rem; color: rgba(255,255,255,.85); }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--edu-border); }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: var(--edu-muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: .05em; }
+  .info-value { font-weight: 600; color: var(--edu-text); }
+  .role-badge { border-radius: 999px; padding: 0.25rem 0.8rem; font-size: 0.78rem; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="profile-page">
+<div class="container">
+  <div class="profile-card">
+
+    {# AVATAR #}
+    <div class="text-center mb-4">
+      <div class="avatar-large" id="avatar-trigger" title="Changer la photo">
+        {% if app.user.profilePicture %}
+          <img src="{{ asset('uploads/avatars/' ~ app.user.profilePicture) }}" id="avatar-preview" alt="avatar">
+        {% else %}
+          <span id="avatar-initials">{{ (app.user.fullName ?? app.user.userIdentifier)|first|upper }}</span>
+        {% endif %}
+        <div class="avatar-overlay">
+          <i class="bi bi-camera-fill text-white"></i>
+          <small>Changer</small>
+        </div>
+      </div>
+      <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" class="d-none">
+      <div class="mt-3">
+        <h4 class="fw-bold mb-0">{{ app.user.fullName }}</h4>
+        <span class="text-muted small">{{ app.user.email }}</span>
+      </div>
+      <div class="mt-2">
+        {% if 'ROLE_ADMIN' in app.user.roles %}
+          <span class="role-badge bg-danger bg-opacity-15 text-danger">Administrateur</span>
+        {% elseif 'ROLE_TEACHER' in app.user.roles %}
+          <span class="role-badge bg-primary bg-opacity-15 text-primary">Enseignant</span>
+        {% else %}
+          <span class="role-badge bg-success bg-opacity-15 text-success">Étudiant</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <hr>
+
+    {# INFOS #}
+    <div class="mb-3">
+      <div class="info-row">
+        <span class="info-label">Nom complet</span>
+        <span class="info-value">{{ app.user.fullName }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value">{{ app.user.email }}</span>
+      </div>
+      {% if app.user.studentNumber %}
+      <div class="info-row">
+        <span class="info-label">N° étudiant</span>
+        <span class="info-value">{{ app.user.studentNumber }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span class="info-label">Membre depuis</span>
+        <span class="info-value">{{ app.user.createdAt|date('d/m/Y') }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Statut</span>
+        <span class="info-value">
+          {% if app.user.isApproved %}
+            <span class="badge bg-success">Approuvé</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">En attente</span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    {# ACTIONS PHOTO #}
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-primary flex-fill" id="upload-btn" style="display:none!important">
+        <i class="bi bi-upload me-2"></i>Enregistrer la photo
+      </button>
+      {% if app.user.profilePicture %}
+      <button class="btn btn-outline-danger btn-sm" id="delete-photo-btn">
+        <i class="bi bi-trash me-1"></i>Supprimer la photo
+      </button>
+      {% endif %}
+    </div>
+    <div id="photo-status" class="mt-2 small"></div>
+
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+const avatarTrigger = document.getElementById('avatar-trigger');
+const photoInput    = document.getElementById('photo-input');
+const uploadBtn     = document.getElementById('upload-btn');
+const photoStatus   = document.getElementById('photo-status');
+
+avatarTrigger.addEventListener('click', () => photoInput.click());
+
+photoInput.addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+
+  if (file.size > 2 * 1024 * 1024) {
+    photoStatus.innerHTML = '<span class="text-danger">Fichier trop volumineux (max 2 Mo).</span>';
+    return;
+  }
+
+  // Prévisualisation
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const initials = document.getElementById('avatar-initials');
+    if (initials) initials.remove();
+    let img = document.getElementById('avatar-preview');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'avatar-preview';
+      avatarTrigger.insertBefore(img, avatarTrigger.firstChild);
+    }
+    img.src = e.target.result;
+    uploadBtn.style.display = '';
+    photoStatus.innerHTML = '';
+  };
+  reader.readAsDataURL(file);
+
+  // Upload auto
+  const formData = new FormData();
+  formData.append('photo', file);
+  photoStatus.innerHTML = '<span class="text-muted"><i class="bi bi-arrow-repeat spin"></i> Envoi en cours...</span>';
+
+  fetch('{{ path("app_profile_upload_photo") }}', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        photoStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Photo mise à jour !</span>';
+        uploadBtn.style.display = 'none';
+      } else {
+        photoStatus.innerHTML = '<span class="text-danger">' + (data.error || 'Erreur.') + '</span>';
+      }
+    })
+    .catch(() => { photoStatus.innerHTML = '<span class="text-danger">Erreur réseau.</span>'; });
+});
+
+const deleteBtn = document.getElementById('delete-photo-btn');
+if (deleteBtn) {
+  deleteBtn.addEventListener('click', function () {
+    if (!confirm('Supprimer votre photo de profil ?')) return;
+    fetch('{{ path("app_profile_delete_photo") }}', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => { if (data.success) location.reload(); });
+  });
+}
+</script>
+{% endblock %}

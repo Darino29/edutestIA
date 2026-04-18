@@ -115,6 +115,26 @@ class OllamaController extends AbstractController
         ]);
     }
 
+    #[Route('/chat', name: 'app_ai_chat', methods: ['POST'])]
+    public function chat(Request $request): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        $data     = json_decode($request->getContent(), true);
+        $messages = $data['messages'] ?? [];
+
+        if (empty($messages)) {
+            return $this->json(['error' => 'Messages manquants'], 400);
+        }
+
+        // Garder uniquement les 10 derniers échanges pour limiter les tokens
+        $messages = array_slice($messages, -10);
+
+        $reply = $this->aiService->chatCompletion($messages);
+
+        return $this->json(['reply' => $reply]);
+    }
+
     #[Route('/explain', name: 'app_ai_explain')]
     public function explain(Request $request): Response
     {

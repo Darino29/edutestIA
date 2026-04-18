@@ -5,9 +5,9 @@
 
 {% block body %}
   {# HERO PRINCIPAL #}
-  <section class="py-5 py-lg-6 bg-primary bg-gradient text-light">
+  <section class="hero-section text-light">
     <div class="container">
-      <div class="row align-items-center g-4 mt-5">
+      <div class="row align-items-center g-4">
         <div class="col-lg-7">
           <p class="text-uppercase mb-2 small text-white-50 fw-semibold">
             Plateforme d’évaluation en ligne
@@ -39,7 +39,7 @@
         </div>
 
         <div class="col-lg-5">
-          <div class="card border-0 shadow-lg rounded-4 bg-white text-dark">
+          <div class="card hero-card bg-white text-dark">
             <div class="card-body p-4">
               <h2 class="h5 fw-semibold mb-3">
                 Pourquoi choisir <span class="text-primary">EduTest</span> ?
@@ -91,61 +91,56 @@
   </section>
 
   {# SECTION FONCTIONNALITÉS #}
-  <section class="py-5 bg-light">
+  <section class="py-5" style="background: var(--edu-bg);">
     <div class="container">
-      <div class="text-center mb-4">
+      <div class="text-center mb-5">
         <h2 class="h3 fw-bold mb-2">Pensé pour les enseignants et les étudiants</h2>
-        <p class="text-muted mb-0">
-          Un outil simple à prendre en main, adapté aux examens de BTS, Licence Pro et Master.
-        </p>
+        <p class="text-muted mb-0">Un outil simple à prendre en main, adapté aux examens de BTS, Licence Pro et Master.</p>
       </div>
 
       <div class="row g-4">
         <div class="col-md-4">
-          <div class="card h-100 border-0 shadow-sm rounded-4">
-            <div class="card-body">
-              <div class="mb-3 text-primary">
-                <i class="bi bi-journal-plus fs-1"></i>
+          <div class="card feature-card h-100 border-0 bg-white">
+            <div class="card-body p-4">
+              <div class="feature-icon bg-primary bg-opacity-10 text-primary">
+                <i class="bi bi-journal-plus"></i>
               </div>
-              <h3 class="h5 fw-semibold">Création d’examens</h3>
+              <h3 class="h5 fw-bold">Création d’examens</h3>
               <p class="text-muted small mb-0">
-                Définissez le titre, la durée, la période, ajoutez des questions QCM ou texte libre,
-                et affectez-les aux étudiants en quelques clics.
+                Définissez le titre, la durée, la période, ajoutez des questions QCM ou texte libre, et affectez-les en quelques clics.
               </p>
             </div>
           </div>
         </div>
 
         <div class="col-md-4">
-          <div class="card h-100 border-0 shadow-sm rounded-4">
-            <div class="card-body">
-              <div class="mb-3 text-primary">
-                <i class="bi bi-laptop fs-1"></i>
+          <div class="card feature-card h-100 border-0 bg-white">
+            <div class="card-body p-4">
+              <div class="feature-icon bg-success bg-opacity-10 text-success">
+                <i class="bi bi-laptop"></i>
               </div>
-              <h3 class="h5 fw-semibold">Passation étudiante</h3>
+              <h3 class="h5 fw-bold">Passation étudiante</h3>
               <p class="text-muted small mb-0">
-                Interface claire avec minuterie, gestion des réponses, validation finale unique
-                et accès ultérieur au détail de la copie.
+                Interface claire avec minuterie, gestion des réponses, validation finale unique et accès ultérieur au détail.
               </p>
             </div>
           </div>
         </div>
 
         <div class="col-md-4">
-          <div class="card h-100 border-0 shadow-sm rounded-4">
-            <div class="card-body">
-              <div class="mb-3 text-primary">
-                <i class="bi bi-clipboard-data fs-1"></i>
+          <div class="card feature-card h-100 border-0 bg-white">
+            <div class="card-body p-4">
+              <div class="feature-icon bg-warning bg-opacity-10 text-warning">
+                <i class="bi bi-clipboard-data"></i>
               </div>
-              <h3 class="h5 fw-semibold">Correction & statistiques</h3>
+              <h3 class="h5 fw-bold">Correction & statistiques</h3>
               <p class="text-muted small mb-0">
-                Correction automatique des QCM, calcul des moyennes, écart-types et export des résultats en CSV ou PDF.
+                Correction automatique des QCM, calcul des moyennes, écart-types et export CSV/PDF.
               </p>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -161,33 +156,25 @@
 
       <div class="row g-4 align-items-center">
         <div class="col-lg-4">
-          <div class="d-flex mb-3">
-            <div class="me-3 text-primary fw-bold fs-4">1</div>
+          <div class="d-flex align-items-start mb-4 gap-3">
+            <div class="step-number flex-shrink-0">1</div>
             <div>
-              <div class="fw-semibold">L’enseignant crée l’examen</div>
-              <div class="text-muted small">
-                Il choisit les questions, la durée, la période, puis affecte l’examen à une promotion ou à des étudiants.
-              </div>
+              <div class="fw-bold">L’enseignant crée l’examen</div>
+              <div class="text-muted small">Il choisit les questions, la durée, la période, puis affecte l’examen aux étudiants.</div>
             </div>
           </div>
-
-          <div class="d-flex mb-3">
-            <div class="me-3 text-primary fw-bold fs-4">2</div>
+          <div class="d-flex align-items-start mb-4 gap-3">
+            <div class="step-number flex-shrink-0">2</div>
             <div>
-              <div class="fw-semibold">L’étudiant passe l’épreuve</div>
-              <div class="text-muted small">
-                Il se connecte, voit les examens disponibles, répond aux questions dans le temps imparti et soumet.
-              </div>
+              <div class="fw-bold">L’étudiant passe l’épreuve</div>
+              <div class="text-muted small">Il se connecte, répond aux questions dans le temps imparti et soumet.</div>
             </div>
           </div>
-
-          <div class="d-flex">
-            <div class="me-3 text-primary fw-bold fs-4">3</div>
+          <div class="d-flex align-items-start gap-3">
+            <div class="step-number flex-shrink-0">3</div>
             <div>
-              <div class="fw-semibold">Les résultats sont disponibles</div>
-              <div class="text-muted small">
-                La plateforme corrige les QCM, calcule les notes et génère des statistiques pour l’enseignant.
-              </div>
+              <div class="fw-bold">Les résultats sont disponibles</div>
+              <div class="text-muted small">La plateforme corrige les QCM, calcule les notes et génère les statistiques.</div>
             </div>
           </div>
         </div>
@@ -224,47 +211,34 @@
 {% endblock %}
 
 {% block stylesheets %}
+{{ parent() }}
 <style>
-.bg-custom-purple {
-    background-color: #4A206A !important;
-}
-body {
-  scroll-behavior: smooth;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-.hero {
-  background: linear-gradient(to right, rgba(0, 51, 102, 0.85), rgba(0, 102, 204, 0.85)),
-              url('https://previews.123rf.com/images/annastills/annastills2307/annastills230700046/208165604-group-of-students-studying-together-in-the-library-they-using-gadgets-during-their-teamwork.jpg') center/cover;
-  min-height: 90vh;
-  color: #fff;
-  margin-top: 75px;
-}
-.stats-section {
-  background: linear-gradient(135deg, #0d6efd, #198754);
-}
-.card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  transition: all 0.3s ease-in-out;
-}
-.cta {
-  background: linear-gradient(to right, #0d6efd, #20c997);
-}
-.footer {
-  background-color: #0d6efd;
-  position: relative;
-  bottom: 0;
-  width: 100%;
-}
-  /* coins un peu plus arrondis partout */
-  .card.rounded-4 {
-    border-radius: 1rem;
+  .hero-section {
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 60%, #6366F1 100%);
+    padding: 5rem 0 4rem;
   }
-
-  .btn.btn-lg {
-    border-radius: 999px;
+  .hero-card {
+    border-radius: 20px !important;
+    border: 1px solid rgba(255,255,255,.15) !important;
+    box-shadow: 0 20px 60px rgba(15,23,42,.18) !important;
+  }
+  .feature-card {
+    border-radius: 16px !important;
+    border: 1px solid var(--edu-border) !important;
+    transition: transform .18s, box-shadow .18s;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,23,42,.1) !important; }
+  .feature-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin-bottom: 1rem;
+  }
+  .step-number {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--edu-primary), var(--edu-indigo));
+    color: #fff; font-weight: 800; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
   }
 </style>
 {% endblock %}

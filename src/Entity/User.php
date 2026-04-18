@@ -40,6 +40,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 64, nullable: true, unique: true)]
     private ?string $apiToken = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $profilePicture = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -157,6 +160,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getApiToken(): ?string { return $this->apiToken; }
     public function setApiToken(?string $apiToken): static { $this->apiToken = $apiToken; return $this; }
+
+    public function getProfilePicture(): ?string { return $this->profilePicture; }
+    public function setProfilePicture(?string $profilePicture): static { $this->profilePicture = $profilePicture; return $this; }
     public function regenerateApiToken(): string
     {
         $this->apiToken = bin2hex(random_bytes(32));

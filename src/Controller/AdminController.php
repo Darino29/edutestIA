@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Entity\Exam;
 use App\Entity\Assignment;
+use App\Service\GroqService;
+use App\Service\ProgressService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -92,6 +94,63 @@ class AdminController extends AbstractController
             'submissionRate' => $submissionRate,
             'chartData' => $chartData,
             'recentAssignments' => $recentAssignments,
+        ]);
+    }
+
+    #[Route('/ai-insights', name: 'admin_ai_insights')]
+    public function aiInsights(
+        EntityManagerInterface $em,
+        GroqService $groqService,
+        ProgressService $progressService,
+    ): Response {
+        $userRepo   = $em->getRepository(User::class);
+        $examRepo   = $em->getRepository(Exam::class);
+        $assignRepo = $em->getRepository(Assignment::class);
+
+        $students    = $userRepo->findByRole('ROLE_STUDENT');
+        $assignments = $assignRepo->findBy(['status' => 'SUBMITTED']);
+
+        // Score moyen global
+        $grades = array_filter(
+            array_map(fn($a) => $a->getFinalGrade(), $assignments),
+            fn($g) => $g !== null
+        );
+        $avgScore = count($grades) > 0 ? round(array_sum($grades) / count($grades) / 20 * 100, 1) : 0;
+
+        // Étudiants en difficulté + sujets échoués
+        $strugglingCount = 0;
+        $topicFailCount  = [];
+
+        foreach ($students as $student) {
+            $progress = $progressService->getStudentProgress($student);
+            if (!empty($progress['toWork'])) {
+                $strugglingCount++;
+                foreach ($progress['toWork'] as $item) {
+                    $topicFailCount[$item['topic']] = ($topicFailCount[$item['topic']] ?? 0) + 1;
+                }
+            }
+        }
+
+        arsort($topicFailCount);
+        $weakTopics = array_slice(array_keys($topicFailCount), 0, 5);
+
+        $stats = [
+            'totalStudents'      => count($students),
+            'totalTeachers'      => count($userRepo->findByRole('ROLE_TEACHER')),
+            'totalExams'         => count($examRepo->findAll()),
+            'submissionRate'     => count($assignments) > 0
+                                    ? round(count($assignments) / max(1, count($assignRepo->findAll())) * 100, 1)
+                                    : 0,
+            'strugglingStudents' => $strugglingCount,
+            'avgScore'           => $avgScore,
+            'weakTopics'         => $weakTopics,
+        ];
+
+        $report = $groqService->generatePlatformInsights($stats);
+
+        return $this->render('admin/ai_insights.html.twig', [
+            'report' => $report,
+            'stats'  => $stats,
         ]);
     }
 

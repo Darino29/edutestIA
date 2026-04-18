@@ -102,6 +102,58 @@ class GroqService
         return $this->generateCompletion($prompt);
     }
 
+    public function chatCompletion(array $messages): string
+    {
+        try {
+            $allMessages = array_merge([
+                ['role' => 'system', 'content' => 'Tu es EduBot, assistant pédagogique bienveillant de la plateforme EduTest. Tu aides les étudiants et enseignants avec leurs cours, révisions et questions sur la plateforme. Réponds toujours en français, de façon concise (3-4 phrases max) et encourageante.'],
+            ], $messages);
+
+            $response = $this->httpClient->request('POST', self::API_URL, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type'  => 'application/json',
+                ],
+                'json' => [
+                    'model'       => self::MODEL,
+                    'messages'    => $allMessages,
+                    'temperature' => 0.7,
+                    'max_tokens'  => 512,
+                    'stream'      => false,
+                ],
+            ]);
+
+            if ($response->getStatusCode() === 429) {
+                return 'Trop de requêtes. Veuillez patienter quelques secondes.';
+            }
+
+            $data = $response->toArray();
+            return $data['choices'][0]['message']['content'] ?? '';
+        } catch (\Exception $e) {
+            return 'Désolé, une erreur est survenue. Réessayez dans un moment.';
+        }
+    }
+
+    public function generatePlatformInsights(array $stats): string
+    {
+        $weakTopics = !empty($stats['weakTopics']) ? implode(', ', $stats['weakTopics']) : 'N/A';
+        $prompt = "Tu es un expert en analyse pédagogique. Voici les statistiques de la plateforme EduTest :\n\n" .
+                  "- Étudiants inscrits : {$stats['totalStudents']}\n" .
+                  "- Enseignants : {$stats['totalTeachers']}\n" .
+                  "- Examens créés : {$stats['totalExams']}\n" .
+                  "- Taux de soumission des examens : {$stats['submissionRate']}%\n" .
+                  "- Étudiants en difficulté (score moyen < 50%) : {$stats['strugglingStudents']}\n" .
+                  "- Score moyen global : {$stats['avgScore']}%\n" .
+                  "- Sujets les plus échoués : {$weakTopics}\n\n" .
+                  "Génère un rapport d'analyse en Markdown avec :\n" .
+                  "## Bilan global\n" .
+                  "## Points d'attention\n" .
+                  "## Recommandations pour l'administrateur\n" .
+                  "## Actions prioritaires\n" .
+                  "Sois précis, objectif et orienté action.";
+        return $this->generateCompletion($prompt);
+    }
+
     public function generateLessonExplanation(string $topic, string $level = 'intermédiaire'): string
     {
         $prompt = "Tu es un professeur expert et pédagogue. Explique le sujet '{$topic}' de manière claire et engageante pour un niveau {$level}. " .

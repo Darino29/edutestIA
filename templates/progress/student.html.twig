@@ -169,11 +169,21 @@
     {# ======== RECOMMANDATIONS IA ======== #}
     {% if recommendations is not empty and not (recommendations starts with 'ERREUR_') %}
     <div class="section-card mt-2">
-        <div class="d-flex align-items-center mb-3">
-            <span class="me-3 fs-2">🤖</span>
-            <div>
-                <h5 class="fw-bold mb-0">Recommandations personnalisées</h5>
-                <small class="text-muted">Générées par IA selon votre profil de progression</small>
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <span class="fs-2">🤖</span>
+                <div>
+                    <h5 class="fw-bold mb-0">Recommandations personnalisées</h5>
+                    <small class="text-muted">Générées par IA selon votre profil de progression</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-warning" id="reco-play-btn">
+                    <i class="fas fa-volume-up me-1"></i>Écouter
+                </button>
+                <button class="btn btn-sm btn-outline-danger d-none" id="reco-stop-btn">
+                    <i class="fas fa-stop me-1"></i>Stop
+                </button>
             </div>
         </div>
         <hr>
@@ -213,11 +223,31 @@
         {% endif %}
 
         {% if recommendations is defined and recommendations is not empty %}
-        // Render AI recommendations markdown
         const ta = document.createElement('textarea');
         ta.innerHTML = `{{ recommendations|escape('js') }}`;
-        const el = document.getElementById('recommendations-output');
-        if (el) el.innerHTML = marked.parse(ta.value);
+        const recoText = ta.value;
+        const recoEl = document.getElementById('recommendations-output');
+        if (recoEl) recoEl.innerHTML = marked.parse(recoText);
+
+        // Voix recommandations
+        const recoPlay = document.getElementById('reco-play-btn');
+        const recoStop = document.getElementById('reco-stop-btn');
+        if (recoPlay) {
+            recoPlay.addEventListener('click', function () {
+                if (speechSynthesis.speaking) return;
+                const plain = recoText.replace(/[#*_`~>\-]/g, '').trim();
+                const utt = new SpeechSynthesisUtterance(plain);
+                utt.lang = 'fr-FR'; utt.rate = 0.95;
+                utt.onend  = () => recoStop.classList.add('d-none');
+                utt.onerror = () => recoStop.classList.add('d-none');
+                recoStop.classList.remove('d-none');
+                speechSynthesis.speak(utt);
+            });
+            recoStop.addEventListener('click', function () {
+                speechSynthesis.cancel();
+                this.classList.add('d-none');
+            });
+        }
         {% endif %}
     });
     </script>
