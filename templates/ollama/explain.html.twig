@@ -1,0 +1,149 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Explication de cours – EduTest{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .explain-page { background-color: #f8f9fa; padding: 3rem 0; min-height: 100vh; }
+        .search-area {
+            background: white; border-radius: 15px; padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 2rem;
+        }
+        .result-area {
+            background: white; border-radius: 15px; padding: 3rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .level-badge { font-size: 0.85rem; }
+        .markdown-content h1 { color: #5a67d8; font-size: 2rem; margin-top: 1.5rem; }
+        .markdown-content h2 { color: #4c51bf; font-size: 1.5rem; margin-top: 1.2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .markdown-content ul  { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .markdown-content li  { margin-bottom: 0.5rem; }
+        .markdown-content strong { color: #2d3748; }
+        .markdown-content blockquote { border-left: 4px solid #5a67d8; padding-left: 1rem; color: #4a5568; font-style: italic; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="explain-page">
+    <div class="container">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ path('student_exams') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-0">
+                    <i class="bi bi-book-half me-2"></i>Explication de cours par IA
+                </h1>
+                <p class="text-muted mb-0 small">Obtenez une explication pédagogique détaillée sur n'importe quel sujet</p>
+            </div>
+        </div>
+
+        <!-- Formulaire -->
+        <div class="search-area">
+            <form method="post" onsubmit="document.getElementById('spinner').style.display = 'block';">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-7">
+                        <label for="topic" class="form-label h5">Quel sujet souhaitez-vous comprendre ?</label>
+                        <input type="text" class="form-control form-control-lg" id="topic" name="topic"
+                               placeholder="Ex : La photosynthèse, Les intégrales, Le droit des contrats..."
+                               required value="{{ topic }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="level" class="form-label h5">Niveau</label>
+                        <select class="form-select form-select-lg" id="level" name="level">
+                            <option value="débutant"      {% if level == 'débutant' %}selected{% endif %}>Débutant</option>
+                            <option value="intermédiaire" {% if level == 'intermédiaire' %}selected{% endif %}>Intermédiaire</option>
+                            <option value="avancé"        {% if level == 'avancé' %}selected{% endif %}>Avancé</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary btn-lg w-100" type="submit">
+                            <i class="fas fa-lightbulb me-2"></i>Expliquer
+                        </button>
+                    </div>
+                </div>
+                <p class="form-text mt-2 text-muted">L'IA générera une explication structurée adaptée à votre niveau.</p>
+            </form>
+
+            <!-- Loader -->
+            <div id="spinner" class="text-center py-4" style="display:none;">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-3 text-muted">L'IA prépare votre explication, veuillez patienter...</p>
+            </div>
+        </div>
+
+        <!-- Résultat -->
+        {% if result %}
+        <div class="result-area">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="h4 text-muted mb-1">
+                        Explication : <span class="text-dark fw-bold">{{ topic }}</span>
+                    </h3>
+                    <span class="badge bg-primary level-badge">Niveau : {{ level }}</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i>Imprimer
+                    </button>
+                    <a href="{{ path('app_ai_revision') }}?topic={{ topic|url_encode }}"
+                       class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-file-alt me-1"></i>Générer une fiche de révision
+                    </a>
+                    <button class="btn btn-sm btn-outline-warning" id="play-btn">
+                        <i class="fas fa-volume-up me-1"></i>Écouter
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger d-none" id="stop-btn">
+                        <i class="fas fa-stop me-1"></i>Stop
+                    </button>
+                </div>
+            </div>
+            <hr>
+            <div id="markdown-output" class="markdown-content"></div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if result %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ta = document.createElement('textarea');
+            ta.innerHTML = `{{ result|escape('js') }}`;
+            document.getElementById('markdown-output').innerHTML = marked.parse(ta.value);
+        });
+
+        document.getElementById('play-btn').addEventListener('click', function () {
+            if (speechSynthesis.speaking) return;
+            const ta = document.createElement('textarea');
+            ta.innerHTML = `{{ result|escape('js') }}`;
+            const text = ta.value.replace(/[#*_`~>\-]/g, '').trim();
+            const utt = new SpeechSynthesisUtterance(text);
+            utt.lang = 'fr-FR';
+            utt.rate = 0.95;
+            const stopBtn = document.getElementById('stop-btn');
+            utt.onend  = () => stopBtn.classList.add('d-none');
+            utt.onerror = () => stopBtn.classList.add('d-none');
+            stopBtn.classList.remove('d-none');
+            speechSynthesis.speak(utt);
+        });
+
+        document.getElementById('stop-btn').addEventListener('click', function () {
+            speechSynthesis.cancel();
+            this.classList.add('d-none');
+        });
+    </script>
+    {% endif %}
+{% endblock %}

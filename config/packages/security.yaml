@@ -17,6 +17,14 @@ security:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
+    # 📱 API Mobile (stateless, Bearer token)
+    api:
+      pattern: ^/api
+      stateless: true
+      provider: app_user_provider
+      access_token:
+        token_handler: App\Security\ApiTokenHandler
+
     # 🔥 Firewall principal
     main:
       lazy: true
@@ -50,6 +58,10 @@ security:
 
   # 🎯 Règles d’accès
   access_control:
+    # 📱 API publique (login uniquement)
+    - { path: ^/api/login, roles: PUBLIC_ACCESS }
+    - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+
     # 🌐 Pages publiques
     - { path: ^/login, roles: PUBLIC_ACCESS }
     - { path: ^/logout, roles: PUBLIC_ACCESS }

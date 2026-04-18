@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer show:*)",
+      "Bash(php composer.phar --version)",
+      "Bash(where composer:*)",
+      "Read(//c/ProgramData/ComposerSetup/bin//**)",
+      "Bash(/c/Users/23058/bin/composer.bat show:*)",
+      "Bash(flutter --version)",
+      "Bash(/c/Users/23058/bin/composer.bat require:*)",
+      "Bash(php bin/console make:migration)",
+      "Bash(php bin/console doctrine:migrations:migrate --no-interaction)",
+      "Bash(php bin/console debug:router)",
+      "Bash(d:/IRIS/edutest/flutter/bin/flutter devices:*)"
+    ]
+  }
+}

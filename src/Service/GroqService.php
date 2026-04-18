@@ -74,11 +74,69 @@ class GroqService
         });
     }
 
+    public function generateSpeech(string $text): ?string
+    {
+        error_log("generateSpeech called with text: " . $text);
+
+        $escapedText = escapeshellarg($text);
+        $command = "python " . __DIR__ . "/tts.py $escapedText";
+        $output = shell_exec($command);
+        error_log("Python command output: " . $output);
+
+        $outputFile = __DIR__ . "/output.mp3";
+        if (file_exists($outputFile)) {
+            $audio = file_get_contents($outputFile);
+            unlink($outputFile);
+            error_log("Audio file generated and read successfully.");
+            return $audio;
+        }
+        error_log("Audio file not found after Python execution.");
+        return null;
+    }
+
     public function generateRevisionNotes(string $topic): string
     {
         $prompt = "Tu es un assistant pédagogique expert. Crée une fiche de révision complète, claire et structurée pour un étudiant sur le sujet : '{$topic}'. " .
                   "Utilise le format Markdown avec des titres, des points clés, et des exemples si nécessaire. " .
                   "Fais en sorte que ce soit visuellement agréable et facile à apprendre.";
+        return $this->generateCompletion($prompt);
+    }
+
+    public function generateLessonExplanation(string $topic, string $level = 'intermédiaire'): string
+    {
+        $prompt = "Tu es un professeur expert et pédagogue. Explique le sujet '{$topic}' de manière claire et engageante pour un niveau {$level}. " .
+                  "Utilise le format Markdown avec les sections suivantes :\n" .
+                  "## Introduction\n" .
+                  "## Concepts clés (avec analogies du quotidien)\n" .
+                  "## Exemples concrets et détaillés\n" .
+                  "## Erreurs courantes à éviter\n" .
+                  "## Points essentiels à retenir\n" .
+                  "Sois précis, pédagogique et adapté au niveau {$level}. Utilise des exemples concrets et des métaphores pour faciliter la compréhension.";
+        return $this->generateCompletion($prompt);
+    }
+
+    public function generatePersonalizedRecommendations(array $weakTopics, array $inProgressTopics, array $strongTopics): string
+    {
+        if (empty($weakTopics) && empty($inProgressTopics) && empty($strongTopics)) {
+            return '';
+        }
+
+        $weakStr = !empty($weakTopics) ? implode(', ', $weakTopics) : 'aucun';
+        $inProgressStr = !empty($inProgressTopics) ? implode(', ', $inProgressTopics) : 'aucun';
+        $strongStr = !empty($strongTopics) ? implode(', ', $strongTopics) : 'aucun';
+
+        $prompt = "Tu es un conseiller pédagogique bienveillant et expert. Voici le profil de progression d'un étudiant :\n" .
+                  "- Compétences maîtrisées (score ≥ 75%) : {$strongStr}\n" .
+                  "- En cours d'apprentissage (score 50-74%) : {$inProgressStr}\n" .
+                  "- À travailler en priorité (score < 50%) : {$weakStr}\n\n" .
+                  "Génère un plan de recommandations personnalisées en Markdown avec :\n" .
+                  "## Diagnostic de ton profil\n" .
+                  "## Priorités de révision (domaines faibles)\n" .
+                  "## Stratégies pour progresser (domaines en cours)\n" .
+                  "## Comment consolider tes points forts\n" .
+                  "## Plan de révision hebdomadaire suggéré\n" .
+                  "Sois encourageant, précis et propose des actions concrètes.";
+
         return $this->generateCompletion($prompt);
     }
 

@@ -1,0 +1,127 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Progression des étudiants – EduTest{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .progress-page { background: #f8f9fa; padding: 3rem 0; min-height: 100vh; }
+        .section-card  { background: white; border-radius: 15px; padding: 1.75rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .student-row:hover { background: #f0f4ff; }
+        .mini-bar { height: 6px; border-radius: 3px; }
+        .stat-chip { border-radius: 20px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="progress-page">
+<div class="container">
+
+    <div class="d-flex align-items-center mb-4">
+        <a href="{{ path('teacher_dashboard') }}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <div>
+            <h1 class="h2 fw-bold text-primary mb-0"><i class="bi bi-people-fill me-2"></i>Progression des étudiants</h1>
+            <p class="text-muted mb-0 small">Vue d'ensemble par compétences – {{ allProgress|length }} étudiant{{ allProgress|length > 1 ? 's' : '' }} avec des résultats</p>
+        </div>
+    </div>
+
+    {% if allProgress is empty %}
+        <div class="section-card text-center py-5 text-muted">
+            <i class="bi bi-bar-chart fs-1 mb-3 d-block"></i>
+            <h5>Aucune donnée disponible</h5>
+            <p>Les étudiants doivent soumettre des examens pour voir leur progression ici.</p>
+        </div>
+    {% else %}
+
+    {# Statistiques globales #}
+    {% set totalMastered   = 0 %}
+    {% set totalInProgress = 0 %}
+    {% set totalToWork     = 0 %}
+    {% for row in allProgress %}
+        {% set totalMastered   = totalMastered   + row.masteredCount %}
+        {% set totalInProgress = totalInProgress + row.inProgressCount %}
+        {% set totalToWork     = totalToWork     + row.toWorkCount %}
+    {% endfor %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="section-card text-center" style="border-top:4px solid #22c55e;">
+                <div class="display-5 fw-bold text-success">{{ totalMastered }}</div>
+                <div class="text-muted small">Compétences maîtrisées au total</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="section-card text-center" style="border-top:4px solid #f59e0b;">
+                <div class="display-5 fw-bold text-warning">{{ totalInProgress }}</div>
+                <div class="text-muted small">En progression</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="section-card text-center" style="border-top:4px solid #ef4444;">
+                <div class="display-5 fw-bold text-danger">{{ totalToWork }}</div>
+                <div class="text-muted small">À travailler</div>
+            </div>
+        </div>
+    </div>
+
+    {# Tableau des étudiants #}
+    <div class="section-card">
+        <h5 class="fw-bold mb-4">Détail par étudiant</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Étudiant</th>
+                        <th class="text-center">Maîtrisées</th>
+                        <th class="text-center">En progression</th>
+                        <th class="text-center">À travailler</th>
+                        <th>Répartition</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in allProgress %}
+                    <tr class="student-row">
+                        <td>
+                            <div class="fw-semibold">{{ row.student.fullName }}</div>
+                            <small class="text-muted">{{ row.student.email }}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-chip bg-success bg-opacity-15 text-success">{{ row.masteredCount }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-chip bg-warning bg-opacity-15 text-warning">{{ row.inProgressCount }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-chip bg-danger bg-opacity-15 text-danger">{{ row.toWorkCount }}</span>
+                        </td>
+                        <td style="min-width: 140px;">
+                            <div class="d-flex rounded overflow-hidden" style="height:8px;">
+                                {% if row.totalTopics > 0 %}
+                                    <div class="bg-success" style="width: {{ (row.masteredCount / row.totalTopics * 100)|round }}%"></div>
+                                    <div class="bg-warning" style="width: {{ (row.inProgressCount / row.totalTopics * 100)|round }}%"></div>
+                                    <div class="bg-danger"  style="width: {{ (row.toWorkCount / row.totalTopics * 100)|round }}%"></div>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted" style="font-size:0.7rem; margin-top:2px;">{{ row.totalTopics }} sujet{{ row.totalTopics > 1 ? 's' : '' }}</div>
+                        </td>
+                        <td>
+                            <a href="{{ path('teacher_student_progress', {id: row.student.id}) }}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i>Détail
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+</div>
+{% endblock %}

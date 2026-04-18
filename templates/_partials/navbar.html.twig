@@ -55,10 +55,15 @@
               <a href="{{ path('teacher_dashboard') }}" class="btn btn-primary px-3 py-1 d-flex align-items-center">
                 <i class="bi bi-easel-fill me-2"></i> Tableau de bord
               </a>
-              </li>
-                       <li class="nav-item">
-                <a class="btn btn-outline-primary btn-sm" href="{{ path('app_exam_index') }}">
-                 <i class="bi bi-journal-text"></i> Mes examens
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-outline-primary btn-sm" href="{{ path('app_exam_index') }}">
+                <i class="bi bi-journal-text"></i> Mes examens
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-outline-secondary btn-sm" href="{{ path('teacher_students_progress') }}">
+                <i class="bi bi-graph-up me-1"></i> Progression
               </a>
             </li>
           {% endif %}
@@ -68,6 +73,16 @@
             <li class="nav-item">
               <a href="{{ path('app_ai_revision') }}" class="btn btn-gold px-3 py-1 d-flex align-items-center">
                 <i class="bi bi-robot me-2"></i> Révision
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ path('app_ai_explain') }}" class="btn btn-outline-primary btn-sm d-flex align-items-center">
+                <i class="bi bi-book-half me-1"></i> Explications
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ path('student_progress') }}" class="btn btn-outline-success btn-sm d-flex align-items-center">
+                <i class="bi bi-graph-up me-1"></i> Ma progression
               </a>
             </li>
             <li class="nav-item">

@@ -37,6 +37,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $isApproved = false;
 
+    #[ORM\Column(length: 64, nullable: true, unique: true)]
+    private ?string $apiToken = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
@@ -150,6 +153,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->createdAt = $createdAt;
         return $this;
+    }
+
+    public function getApiToken(): ?string { return $this->apiToken; }
+    public function setApiToken(?string $apiToken): static { $this->apiToken = $apiToken; return $this; }
+    public function regenerateApiToken(): string
+    {
+        $this->apiToken = bin2hex(random_bytes(32));
+        return $this->apiToken;
     }
 
     // 🎓 Helpers de rôles

@@ -5,13 +5,17 @@ namespace App\Controller;
 use App\Entity\Choice;
 use App\Entity\Exam;
 use App\Entity\Question;
+use App\Entity\SavedRevision;
 use App\Form\ExamType;
+use App\Repository\SavedRevisionRepository;
 use App\Service\GroqService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Psr\Log\LoggerInterface;
 
 #[Route('/ai')]
 class OllamaController extends AbstractController
@@ -27,18 +31,109 @@ class OllamaController extends AbstractController
     // }
 
     #[Route('/revision', name: 'app_ai_revision')]
-    public function revision(Request $request): Response
+    public function revision(Request $request, SavedRevisionRepository $repo): Response
     {
-        $topic = $request->request->get('topic');
+        $topic = null;
         $result = null;
 
-        if ($request->isMethod('POST') && $topic) {
-            $result = $this->aiService->generateRevisionNotes($topic);
+        if ($request->isMethod('POST')) {
+            $topic = $request->request->get('topic');
+            if ($topic) {
+                $result = $this->aiService->generateRevisionNotes($topic);
+            }
+        } elseif ($loadId = $request->query->getInt('load')) {
+            $saved = $repo->find($loadId);
+            if ($saved && $saved->getUser() === $this->getUser()) {
+                $topic = $saved->getTopic();
+                $result = $saved->getContent();
+            }
         }
+
+        $savedRevisions = $this->getUser() ? $repo->findByUser($this->getUser()) : [];
 
         return $this->render('ollama/revision.html.twig', [
             'result' => $result,
-            'topic' => $topic,
+            'topic' => $topic ?? '',
+            'savedRevisions' => $savedRevisions,
+        ]);
+    }
+
+    #[Route('/revision/save', name: 'app_ai_revision_save', methods: ['POST'])]
+    public function saveRevision(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        $data = json_decode($request->getContent(), true);
+        $topic = trim($data['topic'] ?? '');
+        $content = trim($data['content'] ?? '');
+
+        if (!$topic || !$content) {
+            return $this->json(['error' => 'Données manquantes'], 400);
+        }
+
+        $saved = new SavedRevision($topic, $content, $this->getUser());
+        $em->persist($saved);
+        $em->flush();
+
+        return $this->json(['id' => $saved->getId(), 'topic' => $saved->getTopic()]);
+    }
+
+    #[Route('/revision/saved/{id}/delete', name: 'app_ai_revision_delete', methods: ['POST'])]
+    public function deleteRevision(SavedRevision $savedRevision, EntityManagerInterface $em): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        if ($savedRevision->getUser() !== $this->getUser()) {
+            return $this->json(['error' => 'Accès refusé'], 403);
+        }
+
+        $em->remove($savedRevision);
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/groq/speech', name: 'groq_speech', methods: ['POST'])]
+    public function speech(Request $request, GroqService $groqService, LoggerInterface $logger): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $logger->info('Speech request payload', ['data' => $data]);
+
+        $text = $data['text'] ?? '';
+        $logger->info('Speech text', ['text' => $text]);
+
+        $audio = $groqService->generateSpeech($text);
+
+        if (!$audio) {
+            $logger->error('Speech generation failed');
+            return new Response('Erreur lors de la génération audio', 500);
+        }
+
+        $logger->info('Speech generation succeeded');
+        return new Response($audio, 200, [
+            'Content-Type' => 'audio/mpeg'
+        ]);
+    }
+
+    #[Route('/explain', name: 'app_ai_explain')]
+    public function explain(Request $request): Response
+    {
+        $topic = null;
+        $level = 'intermédiaire';
+        $result = null;
+
+        if ($request->isMethod('POST')) {
+            $topic = $request->request->get('topic');
+            $level = $request->request->get('level', 'intermédiaire');
+            if ($topic) {
+                $result = $this->aiService->generateLessonExplanation($topic, $level);
+            }
+        }
+
+        return $this->render('ollama/explain.html.twig', [
+            'result' => $result,
+            'topic' => $topic ?? '',
+            'level' => $level,
         ]);
     }
 

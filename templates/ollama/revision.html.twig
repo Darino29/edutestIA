@@ -93,8 +93,14 @@
                     <button class="btn btn-sm btn-outline-primary me-2" onclick="window.print()">
                         <i class="fas fa-print me-2"></i>Imprimer
                     </button>
+                    <button class="btn btn-sm btn-outline-success me-2" id="save-revision-btn">
+                        <i class="fas fa-bookmark me-2"></i>Sauvegarder
+                    </button>
                     <button class="btn btn-sm btn-gold" id="play-audio-btn">
                         <i class="fas fa-volume-up me-2"></i>Écouter
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger ms-2 d-none" id="stop-audio-btn">
+                        <i class="fas fa-stop me-2"></i>Stop
                     </button>
                 </div>
             </div>
@@ -105,12 +111,139 @@
             </div>
         </div>
         {% endif %}
+
+        {% if savedRevisions is defined and savedRevisions|length > 0 %}
+        <div class="mt-4" id="saved-section">
+            <h4 class="h5 fw-bold text-secondary mb-3"><i class="fas fa-bookmark me-2"></i>Fiches sauvegardées</h4>
+            <div class="list-group">
+                {% for rev in savedRevisions %}
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                     id="saved-item-{{ rev.id }}"
+                     data-topic="{{ rev.topic|e('html_attr') }}"
+                     data-content="{{ rev.content|e('html_attr') }}">
+                    <div>
+                        <strong>{{ rev.topic }}</strong>
+                        <small class="text-muted ms-2">{{ rev.createdAt|date('d/m/Y H:i') }}</small>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2 eye-btn" onclick="toggleSavedRevision({{ rev.id }}, this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRevision({{ rev.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="saved-result-area" class="result-area mt-4" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="h4 text-muted">Fiche : <span id="saved-result-topic" class="text-dark"></span></h3>
+                <div>
+                    <button class="btn btn-sm btn-gold me-2" id="saved-play-btn">
+                        <i class="fas fa-volume-up me-2"></i>Écouter
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger me-2 d-none" id="saved-stop-btn">
+                        <i class="fas fa-stop me-2"></i>Stop
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="collapseSavedRevision()">
+                        <i class="fas fa-chevron-up me-1"></i>Réduire
+                    </button>
+                </div>
+            </div>
+            <hr>
+            <div id="saved-markdown-output" class="markdown-content"></div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
+    <script>
+        let currentOpenId = null;
+
+        function toggleSavedRevision(id, btn) {
+            const section = document.getElementById('saved-section');
+            const resultArea = document.getElementById('saved-result-area');
+
+            // Même fiche déjà ouverte → collapse
+            if (currentOpenId === id) {
+                collapseSavedRevision();
+                return;
+            }
+
+            // Nouvelle fiche
+            const item = document.getElementById('saved-item-' + id);
+            const topic = item.dataset.topic;
+            const content = item.dataset.content;
+
+            document.getElementById('saved-result-topic').textContent = topic;
+            document.getElementById('saved-markdown-output').innerHTML = marked.parse(content);
+
+            // Stocker le contenu pour la lecture audio
+            resultArea.dataset.plainText = content.replace(/[#*_`~>\-]/g, '').trim();
+
+            // Marquer le bouton actif
+            document.querySelectorAll('.eye-btn').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.replace('btn-outline-primary', 'btn-primary');
+
+            section.style.display = 'none';
+            resultArea.style.display = 'block';
+            resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            currentOpenId = id;
+        }
+
+        function collapseSavedRevision() {
+            speechSynthesis.cancel();
+            document.getElementById('saved-result-area').style.display = 'none';
+            document.getElementById('saved-section').style.display = 'block';
+            document.getElementById('saved-stop-btn').classList.add('d-none');
+            document.querySelectorAll('.eye-btn').forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            currentOpenId = null;
+        }
+
+        function deleteRevision(id) {
+            if (!confirm('Supprimer cette fiche ?')) return;
+            fetch(`/ai/revision/saved/${id}/delete`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        if (currentOpenId === id) collapseSavedRevision();
+                        document.getElementById('saved-item-' + id)?.remove();
+                    }
+                });
+        }
+
+        const savedPlayBtn = document.getElementById('saved-play-btn');
+        const savedStopBtn = document.getElementById('saved-stop-btn');
+        if (savedPlayBtn) {
+            savedPlayBtn.addEventListener('click', function() {
+                if (speechSynthesis.speaking) return;
+                const text = document.getElementById('saved-result-area').dataset.plainText || '';
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'fr-FR';
+                utterance.rate = 0.95;
+                utterance.onend = () => savedStopBtn.classList.add('d-none');
+                utterance.onerror = () => savedStopBtn.classList.add('d-none');
+                savedStopBtn.classList.remove('d-none');
+                speechSynthesis.speak(utterance);
+            });
+            savedStopBtn.addEventListener('click', function() {
+                speechSynthesis.cancel();
+                this.classList.add('d-none');
+            });
+        }
+    </script>
     {% if result %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -123,6 +256,56 @@
             const markdownText = textArea.value;
             
             document.getElementById('markdown-output').innerHTML = marked.parse(markdownText);
+        });
+        document.getElementById('play-audio-btn').addEventListener('click', function() {
+            const stopBtn = document.getElementById('stop-audio-btn');
+
+            if (speechSynthesis.speaking) return;
+
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = `{{ result|escape('js') }}`;
+            const plainText = textarea.value.replace(/[#*_`~>\-]/g, '').trim();
+
+            const utterance = new SpeechSynthesisUtterance(plainText);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 0.95;
+
+            utterance.onend = () => stopBtn.classList.add('d-none');
+            utterance.onerror = () => stopBtn.classList.add('d-none');
+
+            stopBtn.classList.remove('d-none');
+            speechSynthesis.speak(utterance);
+        });
+
+        document.getElementById('stop-audio-btn').addEventListener('click', function() {
+            speechSynthesis.cancel();
+            this.classList.add('d-none');
+        });
+
+        document.getElementById('save-revision-btn').addEventListener('click', async function() {
+            const btn = this;
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = `{{ result|escape('js') }}`;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sauvegarde...';
+
+            try {
+                const res = await fetch('{{ path("app_ai_revision_save") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic: `{{ topic|escape('js') }}`, content: textarea.value })
+                });
+
+                if (!res.ok) throw new Error();
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>Sauvegardé !';
+                btn.classList.replace('btn-outline-success', 'btn-success');
+                btn.disabled = true;
+            } catch {
+                btn.innerHTML = '<i class="fas fa-bookmark me-2"></i>Sauvegarder';
+                btn.disabled = false;
+                alert('Erreur lors de la sauvegarde.');
+            }
         });
     </script>
     {% endif %}

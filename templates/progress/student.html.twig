@@ -1,0 +1,224 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ma Progression – EduTest{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .progress-page { background: #f8f9fa; padding: 3rem 0; min-height: 100vh; }
+        .skill-card {
+            border-radius: 12px; padding: 1.25rem; margin-bottom: 0.75rem;
+            display: flex; align-items: center; gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); background: #fff;
+        }
+        .skill-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        .section-card { background: white; border-radius: 15px; padding: 1.75rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 2rem; }
+        .stat-pill { border-radius: 30px; padding: 0.35rem 0.85rem; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+        .recommendation-content h2 { color: #4c51bf; font-size: 1.3rem; margin-top: 1.4rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.4rem; }
+        .recommendation-content h3 { color: #5a67d8; font-size: 1.1rem; margin-top: 1rem; }
+        .recommendation-content ul  { padding-left: 1.4rem; margin-bottom: 0.75rem; }
+        .recommendation-content li  { margin-bottom: 0.4rem; }
+        .recommendation-content strong { color: #2d3748; }
+        .bar-wrap { flex: 1; }
+        .score-label { font-size: 0.9rem; font-weight: 700; white-space: nowrap; min-width: 48px; text-align: right; }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #6c757d; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="progress-page">
+<div class="container">
+
+    <div class="d-flex align-items-center mb-4">
+        <a href="{{ path('student_exams') }}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <div>
+            <h1 class="h2 fw-bold text-primary mb-0"><i class="bi bi-graph-up me-2"></i>Ma Progression</h1>
+            <p class="text-muted mb-0 small">Compétences maîtrisées, en cours et à travailler</p>
+        </div>
+    </div>
+
+    {% set totalTopics = progress.mastered|length + progress.inProgress|length + progress.toWork|length %}
+
+    {% if totalTopics == 0 %}
+        <div class="section-card empty-state">
+            <i class="bi bi-bar-chart fs-1 text-muted mb-3 d-block"></i>
+            <h4>Aucune donnée de progression</h4>
+            <p>Passez vos premiers examens pour voir votre tableau de progression ici.</p>
+            <a href="{{ path('student_exams') }}" class="btn btn-primary">Voir mes examens</a>
+        </div>
+    {% else %}
+
+    {# ============ RÉSUMÉ GLOBAL ============ #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="section-card text-center h-100" style="border-top: 4px solid #22c55e;">
+                <div class="display-4 fw-bold text-success">{{ progress.mastered|length }}</div>
+                <div class="text-muted">Maîtrisées <span class="text-success fw-semibold">(≥ 75%)</span></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="section-card text-center h-100" style="border-top: 4px solid #f59e0b;">
+                <div class="display-4 fw-bold text-warning">{{ progress.inProgress|length }}</div>
+                <div class="text-muted">En progression <span class="text-warning fw-semibold">(50–74%)</span></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="section-card text-center h-100" style="border-top: 4px solid #ef4444;">
+                <div class="display-4 fw-bold text-danger">{{ progress.toWork|length }}</div>
+                <div class="text-muted">À travailler <span class="text-danger fw-semibold">(&lt; 50%)</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {# ======== GRAPHIQUE DOUGHNUT ======== #}
+        <div class="col-lg-4">
+            <div class="section-card h-100 d-flex flex-column align-items-center justify-content-center">
+                <h5 class="fw-bold mb-3 text-center">Répartition globale</h5>
+                <canvas id="progressChart" style="max-width: 220px;"></canvas>
+            </div>
+        </div>
+
+        {# ======== LISTES PAR CATÉGORIE ======== #}
+        <div class="col-lg-8">
+
+            {# Maîtrisées #}
+            {% if progress.mastered is not empty %}
+            <div class="section-card mb-3">
+                <h5 class="fw-bold text-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Compétences maîtrisées</h5>
+                {% for item in progress.mastered %}
+                <div class="skill-card">
+                    <div class="skill-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-trophy-fill"></i>
+                    </div>
+                    <div class="bar-wrap">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold small">{{ item.topic }}</span>
+                            <span class="stat-pill bg-success bg-opacity-10 text-success">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {{ item.score }}%"></div>
+                        </div>
+                    </div>
+                    <span class="score-label text-success">{{ item.score }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# En progression #}
+            {% if progress.inProgress is not empty %}
+            <div class="section-card mb-3">
+                <h5 class="fw-bold text-warning mb-3"><i class="bi bi-arrow-up-circle-fill me-2"></i>En progression</h5>
+                {% for item in progress.inProgress %}
+                <div class="skill-card">
+                    <div class="skill-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <div class="bar-wrap">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold small">{{ item.topic }}</span>
+                            <span class="stat-pill bg-warning bg-opacity-10 text-warning">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: {{ item.score }}%"></div>
+                        </div>
+                    </div>
+                    <span class="score-label text-warning">{{ item.score }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# À travailler #}
+            {% if progress.toWork is not empty %}
+            <div class="section-card mb-3">
+                <h5 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-circle-fill me-2"></i>À travailler en priorité</h5>
+                {% for item in progress.toWork %}
+                <div class="skill-card">
+                    <div class="skill-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <div class="bar-wrap">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold small">{{ item.topic }}</span>
+                            <div class="d-flex gap-1">
+                                <span class="stat-pill bg-danger bg-opacity-10 text-danger">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                                <a href="{{ path('app_ai_revision') }}" class="stat-pill bg-primary bg-opacity-10 text-primary text-decoration-none">
+                                    <i class="bi bi-robot me-1"></i>Réviser
+                                </a>
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: {{ item.score }}%"></div>
+                        </div>
+                    </div>
+                    <span class="score-label text-danger">{{ item.score }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {# ======== RECOMMANDATIONS IA ======== #}
+    {% if recommendations is not empty and not (recommendations starts with 'ERREUR_') %}
+    <div class="section-card mt-2">
+        <div class="d-flex align-items-center mb-3">
+            <span class="me-3 fs-2">🤖</span>
+            <div>
+                <h5 class="fw-bold mb-0">Recommandations personnalisées</h5>
+                <small class="text-muted">Générées par IA selon votre profil de progression</small>
+            </div>
+        </div>
+        <hr>
+        <div id="recommendations-output" class="recommendation-content"></div>
+    </div>
+    {% endif %}
+
+    {% endif %}{# end totalTopics > 0 #}
+
+</div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% set totalTopics = progress.mastered|length + progress.inProgress|length + progress.toWork|length %}
+        {% if totalTopics > 0 %}
+        // Doughnut chart
+        new Chart(document.getElementById('progressChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Maîtrisées', 'En progression', 'À travailler'],
+                datasets: [{
+                    data: [{{ progress.mastered|length }}, {{ progress.inProgress|length }}, {{ progress.toWork|length }}],
+                    backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                }]
+            },
+            options: {
+                cutout: '65%',
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } }
+            }
+        });
+        {% endif %}
+
+        {% if recommendations is defined and recommendations is not empty %}
+        // Render AI recommendations markdown
+        const ta = document.createElement('textarea');
+        ta.innerHTML = `{{ recommendations|escape('js') }}`;
+        const el = document.getElementById('recommendations-output');
+        if (el) el.innerHTML = marked.parse(ta.value);
+        {% endif %}
+    });
+    </script>
+{% endblock %}

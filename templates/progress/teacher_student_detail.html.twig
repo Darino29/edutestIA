@@ -1,0 +1,123 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Progression de {{ student.fullName }} – EduTest{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .progress-page { background: #f8f9fa; padding: 3rem 0; min-height: 100vh; }
+        .section-card  { background: white; border-radius: 15px; padding: 1.75rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .skill-card    { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 1rem; background: #fafafa; border: 1px solid #eee; }
+        .skill-icon    { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+        .bar-wrap      { flex: 1; }
+        .score-label   { font-size: 0.9rem; font-weight: 700; white-space: nowrap; min-width: 48px; text-align: right; }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="progress-page">
+<div class="container" style="max-width: 860px;">
+
+    <div class="d-flex align-items-center mb-4">
+        <a href="{{ path('teacher_students_progress') }}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <div>
+            <h1 class="h2 fw-bold text-primary mb-0">{{ student.fullName }}</h1>
+            <p class="text-muted mb-0 small">{{ student.email }}{% if student.studentNumber %} · N° {{ student.studentNumber }}{% endif %}</p>
+        </div>
+    </div>
+
+    {% set totalTopics = progress.mastered|length + progress.inProgress|length + progress.toWork|length %}
+
+    {% if totalTopics == 0 %}
+        <div class="section-card text-center py-5 text-muted">
+            <i class="bi bi-bar-chart fs-1 mb-3 d-block"></i>
+            <h5>Aucune donnée de progression</h5>
+            <p>Cet étudiant n'a pas encore soumis d'examens.</p>
+        </div>
+    {% else %}
+
+    {# Résumé #}
+    <div class="row g-3 mb-4">
+        <div class="col-4">
+            <div class="section-card text-center" style="border-top:4px solid #22c55e;">
+                <div class="display-5 fw-bold text-success">{{ progress.mastered|length }}</div>
+                <div class="text-muted small">Maîtrisées</div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="section-card text-center" style="border-top:4px solid #f59e0b;">
+                <div class="display-5 fw-bold text-warning">{{ progress.inProgress|length }}</div>
+                <div class="text-muted small">En progression</div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="section-card text-center" style="border-top:4px solid #ef4444;">
+                <div class="display-5 fw-bold text-danger">{{ progress.toWork|length }}</div>
+                <div class="text-muted small">À travailler</div>
+            </div>
+        </div>
+    </div>
+
+    {% if progress.mastered is not empty %}
+    <div class="section-card">
+        <h5 class="fw-bold text-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Compétences maîtrisées</h5>
+        {% for item in progress.mastered %}
+        <div class="skill-card">
+            <div class="skill-icon bg-success bg-opacity-10 text-success"><i class="bi bi-trophy-fill"></i></div>
+            <div class="bar-wrap">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold small">{{ item.topic }}</span>
+                    <span class="badge bg-success bg-opacity-15 text-success">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                </div>
+                <div class="progress" style="height:7px;"><div class="progress-bar bg-success" style="width:{{ item.score }}%"></div></div>
+            </div>
+            <span class="score-label text-success">{{ item.score }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if progress.inProgress is not empty %}
+    <div class="section-card">
+        <h5 class="fw-bold text-warning mb-3"><i class="bi bi-arrow-up-circle-fill me-2"></i>En progression</h5>
+        {% for item in progress.inProgress %}
+        <div class="skill-card">
+            <div class="skill-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-lightning-charge-fill"></i></div>
+            <div class="bar-wrap">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold small">{{ item.topic }}</span>
+                    <span class="badge bg-warning bg-opacity-15 text-warning">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                </div>
+                <div class="progress" style="height:7px;"><div class="progress-bar bg-warning" style="width:{{ item.score }}%"></div></div>
+            </div>
+            <span class="score-label text-warning">{{ item.score }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if progress.toWork is not empty %}
+    <div class="section-card">
+        <h5 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-circle-fill me-2"></i>À travailler</h5>
+        {% for item in progress.toWork %}
+        <div class="skill-card">
+            <div class="skill-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="bar-wrap">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold small">{{ item.topic }}</span>
+                    <span class="badge bg-danger bg-opacity-15 text-danger">{{ item.examsCount }} examen{{ item.examsCount > 1 ? 's' : '' }}</span>
+                </div>
+                <div class="progress" style="height:7px;"><div class="progress-bar bg-danger" style="width:{{ item.score }}%"></div></div>
+            </div>
+            <span class="score-label text-danger">{{ item.score }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+</div>
+{% endblock %}
