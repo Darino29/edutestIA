@@ -26,7 +26,7 @@ RUN composer install \
     --prefer-dist \
     && composer dump-autoload --optimize --no-dev
 
-RUN echo "APP_ENV=prod\nAPP_DEBUG=0" > .env
+RUN printf 'APP_ENV=prod\nAPP_DEBUG=0\n' > .env
 
 RUN mkdir -p var/cache var/log \
     && php bin/console importmap:install --no-interaction 2>/dev/null || true \
@@ -38,7 +38,8 @@ COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r//' /etc/nginx/nginx.conf /etc/supervisor/conf.d/supervisord.conf /entrypoint.sh \
+    && chmod +x /entrypoint.sh
 
 EXPOSE 8080
 
