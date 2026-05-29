@@ -1,51 +1,30 @@
 FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    libicu-dev \
-    zip \
-    unzip \
-    nginx \
-    supervisor \
-    nodejs \
-    npm \
+    git curl libpng-dev libjpeg-dev libfreetype6-dev \
+    libonig-dev libxml2-dev libzip-dev libicu-dev \
+    zip unzip nginx supervisor nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
-        pdo_mysql \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath \
-        gd \
-        intl \
-        opcache \
-        zip
+        pdo_mysql mbstring exif pcntl bcmath gd intl opcache zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
+COPY . .
+
 RUN composer install \
     --no-dev \
     --no-scripts \
     --no-interaction \
     --optimize-autoloader \
-    --prefer-dist
-
-COPY . .
+    --prefer-dist \
+    && composer dump-autoload --optimize --no-dev
 
 RUN mkdir -p var/cache var/log \
-    && composer dump-autoload --optimize --no-dev \
     && php bin/console importmap:install --no-interaction 2>/dev/null || true \
     && APP_ENV=prod APP_SECRET=dummy php bin/console assets:install public --no-interaction 2>/dev/null || true \
     && chown -R www-data:www-data var public
