@@ -9,7 +9,6 @@
 /public/build
 /public/assets
 /tests
-docker
 *.md
 phpunit.dist.xml
 compose.yaml
