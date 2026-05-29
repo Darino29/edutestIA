@@ -23,35 +23,93 @@ final class AssignmentController extends AbstractController
     #[Route('/', name: 'teacher_assignment_index', methods: ['GET'])]
     public function index(Request $request, EntityManagerInterface $em): Response
     {
-        $teacher = $this->getUser();
-        $examId = $request->query->getInt('exam');
+        $teacher  = $this->getUser();
+        $examId   = $request->query->getInt('exam');
+        $classeId = $request->query->get('classe', '');
+        $statusFilter = $request->query->get('status', '');
 
         $qb = $em->getRepository(Assignment::class)
             ->createQueryBuilder('a')
             ->leftJoin('a.exam', 'e')->addSelect('e')
             ->leftJoin('a.student', 's')->addSelect('s')
+            ->leftJoin('s.classe', 'c')->addSelect('c')
             ->where('e.teacher = :t')
             ->setParameter('t', $teacher)
-            ->orderBy('a.id', 'DESC');
+            ->orderBy('c.level', 'ASC')
+            ->addOrderBy('c.name', 'ASC')
+            ->addOrderBy('s.fullName', 'ASC');
 
         $exam = null;
         if ($examId) {
             $exam = $em->getRepository(Exam::class)->find($examId);
-
             if ($exam && $exam->getTeacher() !== $teacher) {
                 throw $this->createAccessDeniedException();
             }
-
             if ($exam) {
                 $qb->andWhere('e = :exam')->setParameter('exam', $exam);
             }
         }
 
+        if ($classeId === 'none') {
+            $qb->andWhere('s.classe IS NULL');
+        } elseif ($classeId !== '') {
+            $qb->andWhere('c.id = :classeId')->setParameter('classeId', (int) $classeId);
+        }
+
+        if ($statusFilter !== '') {
+            $qb->andWhere('a.status = :status')->setParameter('status', strtoupper($statusFilter));
+        }
+
         $assignments = $qb->getQuery()->getResult();
 
+        // Regroup by class, then by student
+        $grouped = [];
+        foreach ($assignments as $assignment) {
+            $classe    = $assignment->getStudent()->getClasse();
+            $key       = $classe ? $classe->getId() : 0;
+            $student   = $assignment->getStudent();
+            $studentId = $student->getId();
+
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'classe'    => $classe,
+                    'students'  => [],
+                    'assigned'  => 0,
+                    'started'   => 0,
+                    'submitted' => 0,
+                    'grades'    => [],
+                ];
+            }
+            if (!isset($grouped[$key]['students'][$studentId])) {
+                $grouped[$key]['students'][$studentId] = [
+                    'student'     => $student,
+                    'assignments' => [],
+                ];
+            }
+            $grouped[$key]['students'][$studentId]['assignments'][] = $assignment;
+
+            $s = strtolower($assignment->getStatus() ?? '');
+            if ($s === 'assigned')  $grouped[$key]['assigned']++;
+            if ($s === 'started')   $grouped[$key]['started']++;
+            if ($s === 'submitted') $grouped[$key]['submitted']++;
+            if ($assignment->getFinalGrade() !== null) {
+                $grouped[$key]['grades'][] = $assignment->getFinalGrade();
+            }
+        }
+
+        // Sort: named classes first, "no class" group (key=0) last
+        uksort($grouped, fn($a, $b) => $a === 0 ? 1 : ($b === 0 ? -1 : 0));
+
+        $exams = $em->getRepository(Exam::class)->findBy(['teacher' => $teacher], ['title' => 'ASC']);
+
         return $this->render('assignment/index.html.twig', [
-            'assignments' => $assignments,
-            'exam' => $exam,
+            'grouped'         => $grouped,
+            'exam'            => $exam,
+            'exams'           => $exams,
+            'currentExamId'   => $examId,
+            'currentClasseId' => $classeId,
+            'currentStatus'   => $statusFilter,
+            'total'           => count($assignments),
         ]);
     }
 
@@ -91,7 +149,7 @@ final class AssignmentController extends AbstractController
             $em->persist($assignment);
             $em->flush();
 
-            $this->addFlash('success', '✅ Examen affecté à l’étudiant avec succès.');
+            $this->addFlash('success', "✅ Examen affecté à l'étudiant avec succès.");
 
             return $this->redirectToRoute('teacher_assignment_index', $examId ? ['exam' => $examId] : []);
         }
@@ -102,33 +160,6 @@ final class AssignmentController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'teacher_assignment_show', methods: ['GET'])]
-    public function show(Assignment $assignment): Response
-    {
-        return $this->render('assignment/show.html.twig', [
-            'assignment' => $assignment,
-        ]);
-    }
-
-    /* #[Route('/teacher/exam/{id}/assignments', name: 'teacher_exam_assignments')]
-    public function byExam(Exam $exam, AssignmentRepository $repo): Response
-    {
-        // sécurité : empêcher accès à un exam d’un autre prof
-        if ($exam->getTeacher() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $assignments = $repo->findBy(
-            ['exam' => $exam],
-            ['assignedAt' => 'DESC']
-        );
-
-        return $this->render('assignment/index.html.twig', [
-            'assignments' => $assignments,
-            'exam' => $exam,
-        ]);
-    } */
-
     #[Route('/assign-class', name: 'teacher_assignment_assign_class', methods: ['GET', 'POST'])]
     public function assignClass(Request $request, EntityManagerInterface $em, ClasseRepository $classeRepo): Response
     {
@@ -138,49 +169,63 @@ final class AssignmentController extends AbstractController
         $skipped = 0;
 
         if ($request->isMethod('POST')) {
-            $examId   = (int) $request->request->get('exam');
-            $classeId = (int) $request->request->get('classe');
+            $examId    = (int) $request->request->get('exam');
+            $classeIds = $request->request->all('classes');
 
-            $exam   = $em->getRepository(Exam::class)->find($examId);
-            $classe = $classeRepo->find($classeId);
+            $exam = $em->getRepository(Exam::class)->find($examId);
 
             if (!$exam || $exam->getTeacher() !== $this->getUser()) {
                 $this->addFlash('danger', 'Examen invalide.');
                 return $this->redirectToRoute('teacher_assignment_assign_class');
             }
 
-            if (!$classe || $classe->getStudents()->isEmpty()) {
-                $this->addFlash('warning', 'Cette classe ne contient aucun étudiant.');
+            if (empty($classeIds)) {
+                $this->addFlash('warning', 'Veuillez sélectionner au moins une classe.');
                 return $this->redirectToRoute('teacher_assignment_assign_class');
             }
 
-            foreach ($classe->getStudents() as $student) {
-                // Vérifier si déjà affecté
-                $exists = $em->getRepository(Assignment::class)->findOneBy([
-                    'exam'    => $exam,
-                    'student' => $student,
-                ]);
+            // Charger tous les IDs d'étudiants déjà affectés en UNE seule requête
+            $existingRaw = $em->createQueryBuilder()
+                ->select('IDENTITY(a.student) as sid')
+                ->from(Assignment::class, 'a')
+                ->where('a.exam = :exam')
+                ->setParameter('exam', $exam)
+                ->getQuery()
+                ->getScalarResult();
+            $alreadyAssigned = array_flip(array_column($existingRaw, 'sid'));
 
-                if ($exists) {
-                    $skipped++;
+            $classesLabels = [];
+            foreach ($classeIds as $classeId) {
+                $classe = $classeRepo->find((int) $classeId);
+                if (!$classe) {
                     continue;
                 }
 
-                $assignment = new Assignment();
-                $assignment->setExam($exam);
-                $assignment->setStudent($student);
-                $assignment->setStatus('ASSIGNED');
-                $assignment->setAssignedAt(new \DateTimeImmutable());
-                $em->persist($assignment);
-                $created++;
+                foreach ($classe->getStudents() as $student) {
+                    if (isset($alreadyAssigned[$student->getId()])) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $assignment = new Assignment();
+                    $assignment->setExam($exam);
+                    $assignment->setStudent($student);
+                    $assignment->setStatus('ASSIGNED');
+                    $assignment->setAssignedAt(new \DateTimeImmutable());
+                    $em->persist($assignment);
+                    $alreadyAssigned[$student->getId()] = true;
+                    $created++;
+                }
+                $classesLabels[] = $classe->getFullLabel();
             }
 
             $em->flush();
 
             if ($created > 0) {
-                $this->addFlash('success', "✅ {$created} affectation(s) créée(s) pour la classe « {$classe->getFullLabel()} »." . ($skipped > 0 ? " {$skipped} déjà affecté(s), ignoré(s)." : ''));
+                $classesStr = implode(', ', $classesLabels);
+                $this->addFlash('success', "✅ {$created} affectation(s) créée(s) pour : {$classesStr}." . ($skipped > 0 ? " {$skipped} déjà affecté(s), ignoré(s)." : ''));
             } else {
-                $this->addFlash('warning', 'Tous les étudiants de cette classe avaient déjà cet examen affecté.');
+                $this->addFlash('warning', 'Tous les étudiants sélectionnés avaient déjà cet examen affecté.');
             }
 
             return $this->redirectToRoute('teacher_assignment_index');
@@ -189,6 +234,14 @@ final class AssignmentController extends AbstractController
         return $this->render('assignment/assign_class.html.twig', [
             'exams'   => $exams,
             'classes' => $classes,
+        ]);
+    }
+
+    #[Route('/{id}', name: 'teacher_assignment_show', methods: ['GET'])]
+    public function show(Assignment $assignment): Response
+    {
+        return $this->render('assignment/show.html.twig', [
+            'assignment' => $assignment,
         ]);
     }
 

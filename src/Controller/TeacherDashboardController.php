@@ -96,17 +96,22 @@ class TeacherDashboardController extends AbstractController
             ];
         }
 
-        $recentAssignments = $assignRepo->createQueryBuilder('a')
+        $recentQuery = $assignRepo->createQueryBuilder('a')
             ->leftJoin('a.exam', 'e')->addSelect('e')
             ->leftJoin('a.student', 's')->addSelect('s')
             ->where('a.status = :status')
-            ->andWhere('e.teacher = :teacher')   // <-- adapte le champ si besoin
+            ->andWhere('e.teacher = :teacher')
             ->setParameter('status', 'SUBMITTED')
             ->setParameter('teacher', $teacher)
             ->orderBy('a.submittedAt', 'DESC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult();
+            ->getQuery();
+
+        $recentAssignments = $paginator->paginate(
+            $recentQuery,
+            $request->query->getInt('proctorPage', 1),
+            10,
+            ['pageParameterName' => 'proctorPage']
+        );
 
         // 🧾 Rendu de la vue
         return $this->render('teacher/dashboard.html.twig', [

@@ -1,12 +1,21 @@
 {% extends 'base.html.twig' %}
-{% block title %}Affecter un examen à une classe – EduTest{% endblock %}
+{% block title %}Affecter un examen à des classes – EduTest{% endblock %}
 
 {% block stylesheets %}{{ parent() }}
 <style>
   .page { padding: 2.5rem 0; min-height: 100vh; }
-  .form-card { background:#fff; border-radius:16px; padding:2rem; box-shadow:var(--edu-shadow); max-width:580px; margin:0 auto; border:1px solid var(--edu-border); }
-  .class-option { border-radius:10px; border:1.5px solid var(--edu-border); padding:.75rem 1rem; cursor:pointer; transition:all .15s; margin-bottom:.5rem; }
-  .class-option:hover, .class-option.selected { border-color:var(--edu-primary); background:#EFF6FF; }
+  .form-card { background:#fff; border-radius:16px; padding:2rem; box-shadow:var(--edu-shadow); max-width:700px; margin:0 auto; border:1px solid var(--edu-border); }
+  .class-checkbox-item {
+    border-radius:10px; border:1.5px solid var(--edu-border);
+    padding:.65rem 1rem; cursor:pointer; transition:all .15s;
+    display:flex; align-items:center; gap:.75rem;
+    user-select:none;
+  }
+  .class-checkbox-item:hover { border-color:var(--edu-primary); background:#EFF6FF; }
+  .class-checkbox-item input[type=checkbox]:checked ~ * { color: var(--edu-primary); }
+  .class-checkbox-item:has(input:checked) { border-color:var(--edu-primary); background:#EFF6FF; }
+  .level-group-title { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--edu-muted); margin-bottom:.5rem; margin-top:1rem; }
+  .badge-count { background:#EFF6FF; color:var(--edu-primary); border-radius:6px; padding:.1rem .5rem; font-size:.75rem; font-weight:700; }
 </style>
 {% endblock %}
 
@@ -16,8 +25,8 @@
   <div class="d-flex align-items-center mb-4">
     <a href="{{ path('teacher_assignment_index') }}" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
     <div>
-      <h1 class="h2 fw-bold text-primary mb-0"><i class="bi bi-building me-2"></i>Affecter à une classe</h1>
-      <p class="text-muted small mb-0">Assigne un examen à tous les étudiants d'une classe en un clic</p>
+      <h1 class="h2 fw-bold text-primary mb-0"><i class="bi bi-building me-2"></i>Affecter à des classes</h1>
+      <p class="text-muted small mb-0">Assigne un examen à un ou plusieurs groupes en un clic</p>
     </div>
   </div>
 
@@ -38,7 +47,9 @@
         <a href="{{ path('app_exam_new') }}" class="btn btn-primary">Créer un examen</a>
       </div>
     {% else %}
-      <form method="post">
+      <form method="post" id="assign-form">
+
+        {# — Examen — #}
         <div class="mb-4">
           <label class="form-label fw-bold">Examen à affecter</label>
           <select class="form-select" name="exam" required>
@@ -49,25 +60,74 @@
           </select>
         </div>
 
+        {# — Classes (cases à cocher groupées par niveau) — #}
         <div class="mb-4">
-          <label class="form-label fw-bold">Classe destinataire</label>
-          <select class="form-select" name="classe" required>
-            <option value="">-- Choisir une classe --</option>
-            {% for classe in classes %}
-              <option value="{{ classe.id }}">
-                {{ classe.fullLabel }} ({{ classe.students|length }} étudiant{{ classe.students|length > 1 ? 's' : '' }})
-              </option>
-            {% endfor %}
-          </select>
-          <div class="form-text">Les étudiants déjà affectés à cet examen seront ignorés automatiquement.</div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="form-label fw-bold mb-0">Classes destinataires</label>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-select-all">Tout sélectionner</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-deselect-all">Tout désélectionner</button>
+            </div>
+          </div>
+
+          {% set currentLevel = null %}
+          {% for classe in classes %}
+            {% if classe.level != currentLevel %}
+              {% if currentLevel is not null %}</div>{% endif %}
+              {% set currentLevel = classe.level %}
+              <div class="level-group-title">{{ classe.level }}</div>
+              <div class="mb-2">
+            {% endif %}
+
+            <label class="class-checkbox-item mb-2">
+              <input type="checkbox" name="classes[]" value="{{ classe.id }}" class="form-check-input flex-shrink-0 mt-0">
+              <div class="flex-grow-1">
+                <span class="fw-semibold">{{ classe.fullLabel }}</span>
+              </div>
+              <span class="badge-count">{{ classe.students|length }} étudiant{{ classe.students|length > 1 ? 's' : '' }}</span>
+            </label>
+
+          {% endfor %}
+          {% if currentLevel is not null %}</div>{% endif %}
+
+          <div class="form-text mt-1">Les étudiants déjà affectés à cet examen seront ignorés automatiquement.</div>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100 py-2">
-          <i class="bi bi-send-fill me-2"></i>Affecter à toute la classe
+        <div id="no-class-warning" class="alert alert-warning d-none">
+          Veuillez sélectionner au moins une classe.
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2" id="submit-btn">
+          <i class="bi bi-send-fill me-2"></i>Affecter aux classes sélectionnées
         </button>
       </form>
     {% endif %}
   </div>
 </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}{{ parent() }}
+<script>
+  const allCheckboxes = document.querySelectorAll('input[name="classes[]"]');
+  const form = document.getElementById('assign-form');
+  const warning = document.getElementById('no-class-warning');
+
+  document.getElementById('btn-select-all')?.addEventListener('click', () => {
+    allCheckboxes.forEach(c => c.checked = true);
+  });
+  document.getElementById('btn-deselect-all')?.addEventListener('click', () => {
+    allCheckboxes.forEach(c => c.checked = false);
+  });
+
+  form?.addEventListener('submit', (e) => {
+    const anyChecked = [...allCheckboxes].some(c => c.checked);
+    if (!anyChecked) {
+      e.preventDefault();
+      warning.classList.remove('d-none');
+    } else {
+      warning.classList.add('d-none');
+    }
+  });
+</script>
 {% endblock %}

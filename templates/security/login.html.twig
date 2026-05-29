@@ -19,7 +19,7 @@
                 </div>
             {% endif %}
 
-            <form method="post">
+            <form method="post" id="login-form" novalidate>
                 <div class="mb-3">
                     <label for="inputEmail" class="form-label">Adresse email</label>
                     <input type="email"
@@ -27,7 +27,9 @@
                            name="_username"
                            id="inputEmail"
                            class="form-control"
+                           autocomplete="email"
                            required autofocus>
+                    <div class="invalid-feedback" id="email-error"></div>
                 </div>
 
                 <div class="mb-3">
@@ -37,17 +39,20 @@
                                name="_password"
                                id="inputPassword"
                                class="form-control"
+                               autocomplete="current-password"
+                               minlength="6"
                                required>
                         <button class="btn btn-outline-secondary" type="button" id="toggle-login-pwd" tabindex="-1">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
+                    <div class="invalid-feedback d-block" id="pwd-error" style="display:none!important"></div>
                 </div>
 
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
                 <div class="d-grid mb-3">
-                    <button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary" type="submit" id="login-submit">
                         <i class="bi bi-box-arrow-in-right me-1"></i> Se connecter
                     </button>
                 </div>
@@ -66,12 +71,83 @@
 
 {% block javascripts %}{{ parent() }}
 <script>
-document.getElementById('toggle-login-pwd').addEventListener('click', function () {
-  const input = document.getElementById('inputPassword');
-  const icon  = this.querySelector('i');
-  const show  = input.type === 'password';
-  input.type  = show ? 'text' : 'password';
-  icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
-});
+(function () {
+  const emailInput  = document.getElementById('inputEmail');
+  const pwdInput    = document.getElementById('inputPassword');
+  const emailError  = document.getElementById('email-error');
+  const pwdError    = document.getElementById('pwd-error');
+  const form        = document.getElementById('login-form');
+
+  /* ---- toggle mot de passe ---- */
+  document.getElementById('toggle-login-pwd').addEventListener('click', function () {
+    const show = pwdInput.type === 'password';
+    pwdInput.type = show ? 'text' : 'password';
+    this.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+  });
+
+  /* ---- validation email en temps réel ---- */
+  function validateEmail() {
+    const val = emailInput.value.trim();
+    if (!val) {
+      setError(emailInput, emailError, 'L\'adresse email est obligatoire.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val)) {
+      setError(emailInput, emailError, 'Veuillez saisir une adresse email valide.');
+      return false;
+    }
+    clearError(emailInput, emailError);
+    return true;
+  }
+
+  /* ---- validation mot de passe en temps réel ---- */
+  function validatePassword() {
+    const val = pwdInput.value;
+    if (!val) {
+      setError(pwdInput, pwdError, 'Le mot de passe est obligatoire.');
+      return false;
+    }
+    if (val.length < 6) {
+      setError(pwdInput, pwdError, 'Le mot de passe doit contenir au moins 6 caractères.');
+      return false;
+    }
+    clearError(pwdInput, pwdError);
+    return true;
+  }
+
+  function setError(input, errorEl, msg) {
+    input.classList.add('is-invalid');
+    input.classList.remove('is-valid');
+    errorEl.textContent = msg;
+    errorEl.style.display = 'block';
+  }
+
+  function clearError(input, errorEl) {
+    input.classList.remove('is-invalid');
+    input.classList.add('is-valid');
+    errorEl.textContent = '';
+    errorEl.style.display = 'none';
+  }
+
+  emailInput.addEventListener('blur', validateEmail);
+  emailInput.addEventListener('input', function () {
+    if (emailInput.classList.contains('is-invalid')) validateEmail();
+  });
+
+  pwdInput.addEventListener('blur', validatePassword);
+  pwdInput.addEventListener('input', function () {
+    if (pwdInput.classList.contains('is-invalid')) validatePassword();
+  });
+
+  /* ---- validation à la soumission ---- */
+  form.addEventListener('submit', function (e) {
+    const emailOk = validateEmail();
+    const pwdOk   = validatePassword();
+    if (!emailOk || !pwdOk) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+})();
 </script>
 {% endblock %}

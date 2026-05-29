@@ -174,9 +174,9 @@
         </div>
     </div>
 
-    {# ======== RECOMMANDATIONS IA ======== #}
-    {% if recommendations is not empty and not (recommendations starts with 'ERREUR_') %}
-    <div class="section-card mt-2">
+    {# ======== RECOMMANDATIONS IA (chargées en AJAX) ======== #}
+    {% if totalTopics > 0 %}
+    <div class="section-card mt-2" id="recommendations-card">
         <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
             <div class="d-flex align-items-center gap-3">
                 <span class="fs-2">🤖</span>
@@ -186,7 +186,7 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-warning" id="reco-play-btn">
+                <button class="btn btn-sm btn-outline-warning d-none" id="reco-play-btn">
                     <i class="fas fa-volume-up me-1"></i>Écouter
                 </button>
                 <button class="btn btn-sm btn-outline-danger d-none" id="reco-stop-btn">
@@ -195,7 +195,11 @@
             </div>
         </div>
         <hr>
-        <div id="recommendations-output" class="recommendation-content"></div>
+        <div id="recommendations-loading" class="text-center py-3">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2 small">Génération des recommandations IA…</p>
+        </div>
+        <div id="recommendations-output" class="recommendation-content" style="display:none;"></div>
     </div>
     {% endif %}
 
@@ -241,33 +245,44 @@
         });
         {% endif %}
 
-        {% if recommendations is defined and recommendations is not empty %}
-        const ta = document.createElement('textarea');
-        ta.innerHTML = `{{ recommendations|escape('js') }}`;
-        const recoText = ta.value;
-        const recoEl = document.getElementById('recommendations-output');
-        if (recoEl) recoEl.innerHTML = marked.parse(recoText);
+        // Chargement AJAX des recommandations IA
+        const recoCard    = document.getElementById('recommendations-card');
+        const recoLoading = document.getElementById('recommendations-loading');
+        const recoOutput  = document.getElementById('recommendations-output');
+        const recoPlay    = document.getElementById('reco-play-btn');
+        const recoStop    = document.getElementById('reco-stop-btn');
 
-        // Voix recommandations
-        const recoPlay = document.getElementById('reco-play-btn');
-        const recoStop = document.getElementById('reco-stop-btn');
-        if (recoPlay) {
-            recoPlay.addEventListener('click', function () {
-                if (speechSynthesis.speaking) return;
-                const plain = recoText.replace(/[#*_`~>\-]/g, '').trim();
-                const utt = new SpeechSynthesisUtterance(plain);
-                utt.lang = 'fr-FR'; utt.rate = 0.95;
-                utt.onend  = () => recoStop.classList.add('d-none');
-                utt.onerror = () => recoStop.classList.add('d-none');
-                recoStop.classList.remove('d-none');
-                speechSynthesis.speak(utt);
-            });
-            recoStop.addEventListener('click', function () {
-                speechSynthesis.cancel();
-                this.classList.add('d-none');
-            });
+        if (recoCard) {
+            fetch('{{ path('student_progress_recommendations') }}')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.text || data.text.startsWith('ERREUR_')) {
+                        recoCard.style.display = 'none';
+                        return;
+                    }
+                    const recoText = data.text;
+                    recoOutput.innerHTML = marked.parse(recoText);
+                    recoLoading.style.display = 'none';
+                    recoOutput.style.display   = '';
+                    recoPlay.classList.remove('d-none');
+
+                    recoPlay.addEventListener('click', function () {
+                        if (speechSynthesis.speaking) return;
+                        const plain = recoText.replace(/[#*_`~>\-]/g, '').trim();
+                        const utt = new SpeechSynthesisUtterance(plain);
+                        utt.lang = 'fr-FR'; utt.rate = 0.95;
+                        utt.onend  = () => recoStop.classList.add('d-none');
+                        utt.onerror = () => recoStop.classList.add('d-none');
+                        recoStop.classList.remove('d-none');
+                        speechSynthesis.speak(utt);
+                    });
+                    recoStop.addEventListener('click', function () {
+                        speechSynthesis.cancel();
+                        this.classList.add('d-none');
+                    });
+                })
+                .catch(() => { recoCard.style.display = 'none'; });
         }
-        {% endif %}
     });
     </script>
 {% endblock %}

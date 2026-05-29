@@ -3,61 +3,133 @@
 
 {% block stylesheets %}{{ parent() }}
 <style>
-  .page { padding: 2.5rem 0; min-height: 100vh; }
-  .section-card { background:#fff; border-radius:16px; padding:1.75rem; box-shadow:var(--edu-shadow); margin-bottom:1.5rem; border:1px solid var(--edu-border); }
-  .student-row { display:flex; align-items:center; justify-content:space-between; padding:.75rem 0; border-bottom:1px solid var(--edu-border); }
-  .student-row:last-child { border-bottom:none; }
-  .student-avatar { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--edu-primary),var(--edu-indigo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0; }
+  .page { padding: 2.5rem 0; }
+
+  .section-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--edu-shadow);
+    border: 1px solid var(--edu-border);
+  }
+
+  /* Lignes membres */
+  .member-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: .6rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .member-row:last-child { border-bottom: none; }
+
+  .member-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .82rem; flex-shrink: 0;
+    color: #fff;
+  }
+  .avatar-student { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+  .avatar-teacher { background: linear-gradient(135deg, #10b981, #0ea5e9); }
+
+  /* Liste de sélection */
+  .pick-list {
+    max-height: 240px; overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: .25rem;
+  }
+  .pick-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: .5rem .6rem;
+    border-radius: 8px;
+    transition: background .12s;
+  }
+  .pick-row:hover { background: #f8fafc; }
+
+  .tag-other-class {
+    font-size: .68rem; color: #f59e0b;
+    background: rgba(245,158,11,.1);
+    border-radius: 4px; padding: .05rem .35rem;
+  }
+
+  /* Header stats */
+  .class-stat { text-align: center; }
+  .class-stat .val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+  .class-stat .lbl { font-size: .7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
 </style>
 {% endblock %}
 
 {% block body %}
 <div class="page">
-<div class="container">
+<div class="container-lg">
 
+  {# ── EN-TÊTE ── #}
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
     <div class="d-flex align-items-center gap-3">
-      <a href="{{ path('admin_classes_index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
+      <a href="{{ path('admin_classes_index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+      </a>
       <div>
-        <h1 class="h2 fw-bold text-primary mb-0">{{ classe.level }} – {{ classe.name }}</h1>
-        <p class="text-muted small mb-0">{{ classe.academicYear }} · Année {{ classe.year }} · {{ classe.students|length }} étudiant{{ classe.students|length > 1 ? 's' : '' }}</p>
+        <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.06em;">Gestion de classe</div>
+        <h1 class="h3 fw-bold text-primary mb-0">{{ classe.level }} — {{ classe.name }}</h1>
+        <p class="text-muted small mb-0">{{ classe.academicYear }} · Année {{ classe.year }}</p>
       </div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
       <a href="{{ path('admin_classes_edit', {id: classe.id}) }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>Modifier
       </a>
       <form method="post" action="{{ path('admin_classes_delete', {id: classe.id}) }}"
-            onsubmit="return confirm('Supprimer cette classe ? Les étudiants ne seront pas supprimés.')">
+            onsubmit="return confirm('Supprimer cette classe ? Les étudiants resteront mais sans classe.')">
         <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Supprimer</button>
       </form>
     </div>
   </div>
 
-  {% for message in app.flashes('success') %}
-    <div class="alert alert-success rounded-3">{{ message }}</div>
-  {% endfor %}
+  {% for msg in app.flashes('success') %}<div class="alert alert-success rounded-3 mb-3">{{ msg }}</div>{% endfor %}
+  {% for msg in app.flashes('danger')  %}<div class="alert alert-danger  rounded-3 mb-3">{{ msg }}</div>{% endfor %}
+
+  {# ── STATS ── #}
+  <div class="d-flex gap-4 mb-4 p-3 bg-white rounded-3 border" style="box-shadow:var(--edu-shadow);">
+    <div class="class-stat">
+      <div class="val text-primary">{{ classe.students|length }}</div>
+      <div class="lbl">Étudiant{{ classe.students|length > 1 ? 's' : '' }}</div>
+    </div>
+    <div class="vr"></div>
+    <div class="class-stat">
+      <div class="val text-success">{{ classe.teachers|length }}</div>
+      <div class="lbl">Enseignant{{ classe.teachers|length > 1 ? 's' : '' }}</div>
+    </div>
+  </div>
 
   <div class="row g-4">
 
-    {# LISTE ÉTUDIANTS #}
-    <div class="col-lg-7">
-      <div class="section-card">
-        <h5 class="fw-bold mb-3"><i class="bi bi-people-fill me-2"></i>Étudiants de la classe</h5>
-        {% if classe.students is empty %}
-          <p class="text-muted text-center py-3">Aucun étudiant dans cette classe.</p>
+    {# ════════════════════════════════════════════
+       COLONNE GAUCHE : membres actuels
+       ════════════════════════════════════════════ #}
+    <div class="col-lg-6">
+
+      {# ENSEIGNANTS #}
+      <div class="section-card mb-4">
+        <h5 class="fw-bold mb-3 text-success">
+          <i class="bi bi-person-workspace me-2"></i>Enseignants
+          <span class="badge bg-success-subtle text-success ms-1">{{ classe.teachers|length }}</span>
+        </h5>
+        {% if classe.teachers is empty %}
+          <p class="text-muted text-center py-3 small">Aucun enseignant assigné.</p>
         {% else %}
-          <div id="students-list">
-          {% for student in classe.students %}
-            <div class="student-row" id="row-{{ student.id }}">
+          <div id="teachers-list">
+          {% for teacher in classe.teachers %}
+            <div class="member-row" id="trow-{{ teacher.id }}">
               <div class="d-flex align-items-center gap-3">
-                <div class="student-avatar">{{ student.fullName|first|upper }}</div>
+                <div class="member-avatar avatar-teacher">{{ teacher.fullName|first|upper }}</div>
                 <div>
-                  <div class="fw-semibold small">{{ student.fullName }}</div>
-                  <div class="text-muted" style="font-size:.75rem;">{{ student.email }}</div>
+                  <div class="fw-semibold small">{{ teacher.fullName }}</div>
+                  <div class="text-muted" style="font-size:.72rem;">{{ teacher.email }}</div>
                 </div>
               </div>
-              <button class="btn btn-sm btn-outline-danger" onclick="removeStudent({{ student.id }}, this)">
+              <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeTeacher({{ teacher.id }}, this)" title="Retirer">
                 <i class="bi bi-x-lg"></i>
               </button>
             </div>
@@ -65,30 +137,69 @@
           </div>
         {% endif %}
       </div>
+
+      {# ÉTUDIANTS #}
+      <div class="section-card">
+        <h5 class="fw-bold mb-3 text-primary">
+          <i class="bi bi-people-fill me-2"></i>Étudiants
+          <span class="badge bg-primary-subtle text-primary ms-1">{{ classe.students|length }}</span>
+        </h5>
+        {% if classe.students is empty %}
+          <p class="text-muted text-center py-3 small">Aucun étudiant dans cette classe.</p>
+        {% else %}
+          <div id="students-list">
+          {% for student in classe.students %}
+            <div class="member-row" id="srow-{{ student.id }}">
+              <div class="d-flex align-items-center gap-3">
+                <div class="member-avatar avatar-student">{{ student.fullName|first|upper }}</div>
+                <div>
+                  <div class="fw-semibold small">{{ student.fullName }}</div>
+                  <div class="text-muted" style="font-size:.72rem;">{{ student.email }}</div>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeStudent({{ student.id }}, this)" title="Retirer">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
     </div>
 
-    {# AJOUTER UN ÉTUDIANT #}
-    <div class="col-lg-5">
-      <div class="section-card">
-        <h5 class="fw-bold mb-3"><i class="bi bi-person-plus-fill me-2"></i>Ajouter un étudiant</h5>
-        {% if availableStudents is empty %}
-          <p class="text-muted small">Aucun étudiant disponible (tous déjà dans une classe).</p>
+    {# ════════════════════════════════════════════
+       COLONNE DROITE : ajouter des membres
+       ════════════════════════════════════════════ #}
+    <div class="col-lg-6">
+
+      {# AJOUTER ENSEIGNANTS #}
+      <div class="section-card mb-4">
+        <h5 class="fw-bold mb-3 text-success">
+          <i class="bi bi-person-plus-fill me-2"></i>Ajouter des enseignants
+        </h5>
+        {% if availableTeachers is empty %}
+          <p class="text-muted small text-center py-2">Tous les enseignants sont déjà assignés.</p>
         {% else %}
-          <div class="mb-3">
-            <input type="text" class="form-control form-control-sm" id="student-search"
-                   placeholder="Rechercher un étudiant..." oninput="filterStudents()">
-          </div>
-          <div id="student-select" style="max-height:260px;overflow-y:auto;">
-            {% for student in availableStudents %}
-              <div class="student-row student-option" data-name="{{ student.fullName|lower }}" data-email="{{ student.email|lower }}">
+          <input type="text" class="form-control form-control-sm mb-2" id="teacher-search"
+                 placeholder="Rechercher un enseignant..." oninput="filterList('teacher')">
+          <div class="pick-list" id="teacher-pick">
+            {% for teacher in availableTeachers %}
+              <div class="pick-row teacher-option"
+                   data-name="{{ teacher.fullName|lower }}"
+                   data-email="{{ teacher.email|lower }}">
                 <div class="d-flex align-items-center gap-2">
-                  <div class="student-avatar" style="width:30px;height:30px;font-size:.75rem;">{{ student.fullName|first|upper }}</div>
+                  <div class="member-avatar avatar-teacher" style="width:30px;height:30px;font-size:.75rem;">
+                    {{ teacher.fullName|first|upper }}
+                  </div>
                   <div>
-                    <div class="fw-semibold small">{{ student.fullName }}</div>
-                    <div class="text-muted" style="font-size:.72rem;">{{ student.email }}</div>
+                    <div class="fw-semibold small">{{ teacher.fullName }}</div>
+                    <div class="text-muted" style="font-size:.7rem;">{{ teacher.email }}</div>
                   </div>
                 </div>
-                <button class="btn btn-sm btn-outline-success" onclick="addStudent({{ student.id }}, this)">
+                <button class="btn btn-sm btn-outline-success py-0 px-2"
+                        onclick="addTeacher({{ teacher.id }}, {{ teacher.fullName|json_encode|raw }}, {{ teacher.email|json_encode|raw }}, this)"
+                        title="Ajouter">
                   <i class="bi bi-plus-lg"></i>
                 </button>
               </div>
@@ -96,9 +207,50 @@
           </div>
         {% endif %}
       </div>
-    </div>
 
+      {# AJOUTER ÉTUDIANTS #}
+      <div class="section-card">
+        <h5 class="fw-bold mb-3 text-primary">
+          <i class="bi bi-person-plus-fill me-2"></i>Ajouter des étudiants
+        </h5>
+        {% if availableStudents is empty %}
+          <p class="text-muted small text-center py-2">Aucun étudiant disponible.</p>
+        {% else %}
+          <input type="text" class="form-control form-control-sm mb-2" id="student-search"
+                 placeholder="Rechercher un étudiant..." oninput="filterList('student')">
+          <div class="pick-list" id="student-pick">
+            {% for student in availableStudents %}
+              <div class="pick-row student-option"
+                   data-name="{{ student.fullName|lower }}"
+                   data-email="{{ student.email|lower }}">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="member-avatar avatar-student" style="width:30px;height:30px;font-size:.75rem;">
+                    {{ student.fullName|first|upper }}
+                  </div>
+                  <div>
+                    <div class="fw-semibold small">{{ student.fullName }}</div>
+                    <div class="text-muted" style="font-size:.7rem;">{{ student.email }}</div>
+                    {% if student.classe %}
+                      <span class="tag-other-class">
+                        <i class="bi bi-arrow-right-circle"></i> {{ student.classe.level }} {{ student.classe.name }}
+                      </span>
+                    {% endif %}
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-outline-primary py-0 px-2"
+                        onclick="addStudent({{ student.id }}, {{ student.fullName|json_encode|raw }}, {{ student.email|json_encode|raw }}, this)"
+                        title="Ajouter">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
   </div>
+
 </div>
 </div>
 {% endblock %}
@@ -107,52 +259,94 @@
 <script>
 const classeId = {{ classe.id }};
 
-async function addStudent(studentId, btn) {
+/* ── Filtre de recherche ── */
+function filterList(type) {
+  const q   = document.getElementById(type + '-search').value.toLowerCase();
+  document.querySelectorAll('.' + type + '-option').forEach(el => {
+    el.style.display = (el.dataset.name.includes(q) || el.dataset.email.includes(q)) ? '' : 'none';
+  });
+}
+
+/* ── TEACHERS ── */
+async function addTeacher(id, fullName, email, btn) {
   btn.disabled = true;
   const fd = new FormData();
-  fd.append('studentId', studentId);
+  fd.append('teacherId', id);
+  const res  = await fetch(`/admin/classes/${classeId}/add-teacher`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) {
+    btn.closest('.pick-row').remove();
+    appendMember('teachers-list', data.teacher.id, data.teacher.fullName, data.teacher.email, 'teacher');
+  } else {
+    alert(data.error || 'Erreur.'); btn.disabled = false;
+  }
+}
+
+async function removeTeacher(id, btn) {
+  if (!confirm('Retirer cet enseignant de la classe ?')) return;
+  btn.disabled = true;
+  const res  = await fetch(`/admin/classes/${classeId}/remove-teacher/${id}`, { method: 'POST' });
+  const data = await res.json();
+  if (data.success) { document.getElementById('trow-' + id)?.remove(); }
+  else { alert(data.error || 'Erreur.'); btn.disabled = false; }
+}
+
+/* ── STUDENTS ── */
+async function addStudent(id, fullName, email, btn) {
+  btn.disabled = true;
+  const fd = new FormData();
+  fd.append('studentId', id);
   const res  = await fetch(`/admin/classes/${classeId}/add-student`, { method: 'POST', body: fd });
   const data = await res.json();
   if (data.success) {
-    btn.closest('.student-option').remove();
-    const list = document.getElementById('students-list');
-    if (list) {
-      list.insertAdjacentHTML('beforeend', `
-        <div class="student-row" id="row-${data.student.id}">
-          <div class="d-flex align-items-center gap-3">
-            <div class="student-avatar">${data.student.fullName[0].toUpperCase()}</div>
-            <div>
-              <div class="fw-semibold small">${data.student.fullName}</div>
-              <div class="text-muted" style="font-size:.75rem;">${data.student.email}</div>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-outline-danger" onclick="removeStudent(${data.student.id}, this)">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>`);
-    }
+    btn.closest('.pick-row').remove();
+    appendMember('students-list', data.student.id, data.student.fullName, data.student.email, 'student');
   } else {
     alert(data.error || 'Erreur.'); btn.disabled = false;
   }
 }
 
-async function removeStudent(studentId, btn) {
+async function removeStudent(id, btn) {
   if (!confirm('Retirer cet étudiant de la classe ?')) return;
   btn.disabled = true;
-  const res  = await fetch(`/admin/classes/${classeId}/remove-student/${studentId}`, { method: 'POST' });
+  const res  = await fetch(`/admin/classes/${classeId}/remove-student/${id}`, { method: 'POST' });
   const data = await res.json();
-  if (data.success) {
-    document.getElementById('row-' + studentId)?.remove();
-  } else {
-    alert(data.error || 'Erreur.'); btn.disabled = false;
-  }
+  if (data.success) { document.getElementById('srow-' + id)?.remove(); }
+  else { alert(data.error || 'Erreur.'); btn.disabled = false; }
 }
 
-function filterStudents() {
-  const q = document.getElementById('student-search').value.toLowerCase();
-  document.querySelectorAll('.student-option').forEach(el => {
-    el.style.display = (el.dataset.name.includes(q) || el.dataset.email.includes(q)) ? '' : 'none';
-  });
+/* ── Helper : injecter une ligne dans la liste ── */
+function appendMember(listId, id, fullName, email, type) {
+  let list = document.getElementById(listId);
+  if (!list) {
+    const card = document.querySelector(`#${listId}`)?.closest('.section-card');
+    if (card) {
+      const p = card.querySelector('p.text-muted');
+      if (p) {
+        const div = document.createElement('div');
+        div.id = listId;
+        p.replaceWith(div);
+        list = div;
+      }
+    }
+  }
+  if (!list) return;
+  const rowId  = (type === 'teacher' ? 'trow-' : 'srow-') + id;
+  const avatar = `member-avatar avatar-${type}`;
+  const removeFn = type === 'teacher' ? `removeTeacher(${id}, this)` : `removeStudent(${id}, this)`;
+  list.insertAdjacentHTML('beforeend', `
+    <div class="member-row" id="${rowId}">
+      <div class="d-flex align-items-center gap-3">
+        <div class="${avatar}">${fullName[0].toUpperCase()}</div>
+        <div>
+          <div class="fw-semibold small">${fullName}</div>
+          <div class="text-muted" style="font-size:.72rem;">${email}</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="${removeFn}" title="Retirer">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>`);
 }
 </script>
 {% endblock %}

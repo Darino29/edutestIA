@@ -1,81 +1,391 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Affectations d’examens | EduTest{% endblock %}
+{% block title %}Affectations d'examens | EduTest{% endblock %}
+
+{% block stylesheets %}{{ parent() }}
+<style>
+  .page { padding: 2rem 0; min-height: 100vh; }
+
+  /* Barre de filtres */
+  .filter-bar {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--edu-border);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--edu-shadow);
+  }
+
+  /* Carte de classe */
+  .class-card {
+    border-radius: 14px;
+    border: 1px solid var(--edu-border);
+    background: #fff;
+    box-shadow: var(--edu-shadow);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+  .class-card-header {
+    padding: .85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+  }
+  .class-card-header:hover { background: #f8fafc; }
+  .class-card-header .class-label {
+    font-weight: 700;
+    font-size: .95rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .class-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .85rem; flex-shrink: 0;
+  }
+  .class-card-body { display: none; }
+  .class-card-body.open { display: block; }
+
+  /* Stat chips dans le header de classe */
+  .stat-chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .chip {
+    border-radius: 20px; padding: .15rem .6rem;
+    font-size: .72rem; font-weight: 700;
+    display: inline-flex; align-items: center; gap: .25rem;
+  }
+  .chip-assigned  { background: rgba(59,130,246,.12);  color: #2563eb; }
+  .chip-started   { background: rgba(245,158,11,.12);  color: #d97706; }
+  .chip-submitted { background: rgba(34,197,94,.12);   color: #16a34a; }
+  .chip-avg       { background: rgba(99,102,241,.12);  color: #4f46e5; }
+
+  /* Chevron toggle */
+  .chevron { transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* Badge statut inline */
+  .badge-assigned  { background: rgba(59,130,246,.12);  color: #2563eb;  border-radius:6px; padding:.2rem .5rem; font-size:.75rem; font-weight:700; }
+  .badge-started   { background: rgba(245,158,11,.12);  color: #d97706;  border-radius:6px; padding:.2rem .5rem; font-size:.75rem; font-weight:700; }
+  .badge-submitted { background: rgba(34,197,94,.12);   color: #16a34a;  border-radius:6px; padding:.2rem .5rem; font-size:.75rem; font-weight:700; }
+
+  /* Séparateur entre étudiants */
+  .student-separator td { border-bottom: 2px solid #e2e8f0 !important; }
+  .student-cell { background: #fafbfc; border-right: 1px solid #eef2f7; vertical-align: middle !important; }
+
+  /* Grade pill */
+  .grade-pill {
+    display: inline-block; border-radius:999px;
+    padding:.15rem .55rem; font-size:.78rem; font-weight:700; min-width:44px; text-align:center;
+  }
+  .grade-high   { background:rgba(34,197,94,.12);  color:#16a34a; }
+  .grade-mid    { background:rgba(245,158,11,.12);  color:#d97706; }
+  .grade-low    { background:rgba(239,68,68,.12);   color:#dc2626; }
+  .grade-none   { background:#f1f5f9; color:#94a3b8; }
+
+  /* Résumé total */
+  .summary-bar {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--edu-border);
+    padding: .75rem 1.25rem;
+    box-shadow: var(--edu-shadow);
+    display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  }
+  .summary-stat { text-align: center; }
+  .summary-stat .val { font-size: 1.3rem; font-weight: 800; line-height: 1; }
+  .summary-stat .lbl { font-size: .7rem; color: var(--edu-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+  table { font-size: .85rem; }
+  .table thead th { background: #f8fafc; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--edu-muted); }
+</style>
+{% endblock %}
 
 {% block body %}
-<div class="container py-5">
-    <!-- En-tête -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h1 class="h4 text-primary mb-0">
-            <i class="bi bi-people-fill me-2"></i>
-            {% if exam is defined and exam %}
-                Affectations — {{ exam.title }}
-            {% else %}
-                Gestion des affectations d’examens
-            {% endif %}
-        </h1>
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{{ path('teacher_assignment_new', exam is defined and exam ? {'exam': exam.id} : {}) }}"
-            class="btn btn-success btn-sm">
-            <i class="bi bi-plus-circle"></i> Nouvelle affectation
-            </a>
-            <a href="{{ path('app_exam_index') }}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left"></i> Retour aux examens
-            </a>
-        </div>
-    </div>
+<div class="page">
+<div class="container-xl">
 
-    <!-- Liste des affectations -->
-    {% if assignments is not empty %}
-        <div class="table-responsive shadow-sm">
-            <table class="table table-striped table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Examen</th>
-                        <th>Étudiant</th>
-                        <th>Status</th>
-                        <th>Date d’affectation</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for assignment in assignments %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ assignment.exam.title }}</td>
-                            <td>{{ assignment.student.fullName ?? assignment.student.email }}</td>
-                            <td>
-                                {% set status = assignment.status|upper %}
-                                {% if status == 'ASSIGNED' %}
-                                    <span class="badge bg-info">Affecté</span>
-                                {% elseif status == 'STARTED' %}
-                                    <span class="badge bg-warning text-dark">En cours</span>
-                                {% elseif status == 'SUBMITTED' %}
-                                    <span class="badge bg-success">Soumis</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ assignment.assignedAt ? assignment.assignedAt|date('d/m/Y H:i') : '—' }}</td>
-                            <td class="text-center">
-                                <form method="post" action="{{ path('teacher_assignment_delete', {'id': assignment.id}) }}" onsubmit="return confirm('Confirmer la suppression ?');">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ assignment.id) }}">
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="alert alert-secondary text-center shadow-sm">
-            Aucune affectation d’examen pour le moment.<br>
-            <a href="{{ path('teacher_assignment_new') }}" class="alert-link">Créer une nouvelle affectation</a>.
-        </div>
+  {# ── EN-TÊTE ── #}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start mb-3 gap-3">
+    <div>
+      <div class="text-uppercase small text-muted fw-semibold mb-1" style="letter-spacing:.06em;">Enseignant</div>
+      <h1 class="h3 fw-bold text-primary mb-1">
+        <i class="bi bi-people-fill me-2"></i>
+        {% if exam is defined and exam %}Affectations — {{ exam.title }}{% else %}Gestion des affectations{% endif %}
+      </h1>
+      <p class="text-muted small mb-0">Affectations regroupées par classe</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ path('teacher_assignment_assign_class') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-building me-1"></i> Affecter par classe
+      </a>
+      <a href="{{ path('teacher_assignment_new') }}" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-person-plus me-1"></i> Affectation individuelle
+      </a>
+      <a href="{{ path('teacher_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Tableau de bord
+      </a>
+    </div>
+  </div>
+
+  {% for msg in app.flashes('success') %}<div class="alert alert-success rounded-3 mb-3">{{ msg }}</div>{% endfor %}
+  {% for msg in app.flashes('info') %}<div class="alert alert-info rounded-3 mb-3">{{ msg }}</div>{% endfor %}
+
+  {# ── BARRE DE FILTRES ── #}
+  <div class="filter-bar mb-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-4 col-lg-3">
+        <label class="form-label form-label-sm fw-semibold mb-1">Examen</label>
+        <select name="exam" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">Tous les examens</option>
+          {% for e in exams %}
+            <option value="{{ e.id }}" {% if currentExamId == e.id %}selected{% endif %}>{{ e.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-sm-4 col-lg-3">
+        <label class="form-label form-label-sm fw-semibold mb-1">Statut</label>
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">Tous les statuts</option>
+          <option value="assigned"  {% if currentStatus == 'assigned'  %}selected{% endif %}>Affecté</option>
+          <option value="started"   {% if currentStatus == 'started'   %}selected{% endif %}>En cours</option>
+          <option value="submitted" {% if currentStatus == 'submitted' %}selected{% endif %}>Soumis</option>
+        </select>
+      </div>
+
+      {% if currentExamId or currentStatus or currentClasseId %}
+      <div class="col-auto">
+        <a href="{{ path('teacher_assignment_index') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-x-circle me-1"></i>Réinitialiser
+        </a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  {# ── RÉSUMÉ GLOBAL ── #}
+  {% if total > 0 %}
+  {% set totalAssigned = 0 %}
+  {% set totalStarted = 0 %}
+  {% set totalSubmitted = 0 %}
+  {% set gradeSum = 0 %}
+  {% set gradeCount = 0 %}
+  {% for group in grouped %}
+    {% set totalAssigned  = totalAssigned  + group.assigned %}
+    {% set totalStarted   = totalStarted   + group.started %}
+    {% set totalSubmitted = totalSubmitted + group.submitted %}
+    {% for g in group.grades %}
+      {% set gradeSum   = gradeSum + g %}
+      {% set gradeCount = gradeCount + 1 %}
+    {% endfor %}
+  {% endfor %}
+  {% set globalAvg = gradeCount > 0 ? (gradeSum / gradeCount)|round(2) : null %}
+
+  <div class="summary-bar mb-4">
+    <div class="summary-stat">
+      <div class="val text-primary">{{ total }}</div>
+      <div class="lbl">Total</div>
+    </div>
+    <div class="vr"></div>
+    <div class="summary-stat">
+      <div class="val" style="color:#2563eb;">{{ totalAssigned }}</div>
+      <div class="lbl">Affectés</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val" style="color:#d97706;">{{ totalStarted }}</div>
+      <div class="lbl">En cours</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val" style="color:#16a34a;">{{ totalSubmitted }}</div>
+      <div class="lbl">Soumis</div>
+    </div>
+    {% if globalAvg is not null %}
+    <div class="vr"></div>
+    <div class="summary-stat">
+      <div class="val" style="color:#4f46e5;">{{ globalAvg }} /20</div>
+      <div class="lbl">Moy. générale</div>
+    </div>
     {% endif %}
+    <div class="ms-auto text-muted small">
+      {{ grouped|length }} groupe{{ grouped|length > 1 ? 's' : '' }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── GROUPES PAR CLASSE ── #}
+  {% if grouped is empty %}
+    <div class="class-card p-5 text-center text-muted">
+      <i class="bi bi-inbox fs-1 mb-3 d-block opacity-50"></i>
+      <h5>Aucune affectation trouvée</h5>
+      <p class="small">Modifiez les filtres ou créez une nouvelle affectation.</p>
+      <a href="{{ path('teacher_assignment_assign_class') }}" class="btn btn-primary btn-sm mt-1">
+        <i class="bi bi-building me-1"></i>Affecter à une classe
+      </a>
+    </div>
+  {% else %}
+
+    {% set levelColors = {
+      'BTS': '#3B82F6', 'BUT': '#8B5CF6', 'Licence': '#22C55E',
+      'LicencePro': '#F59E0B', 'Master': '#EF4444', 'Autre': '#6B7280'
+    } %}
+
+    {% for groupId, group in grouped %}
+      {% set classe       = group.classe %}
+      {% set studentCount = group.students|length %}
+      {% set grades       = group.grades %}
+      {% set avg    = null %}
+      {% if grades|length > 0 %}
+        {% set gradeSum = 0 %}
+        {% for g in grades %}{% set gradeSum = gradeSum + g %}{% endfor %}
+        {% set avg = (gradeSum / grades|length)|round(2) %}
+      {% endif %}
+      {% set color  = classe ? (levelColors[classe.level] ?? '#6B7280') : '#94a3b8' %}
+
+      <div class="class-card" id="group-{{ groupId }}">
+
+        {# ── Header cliquable ── #}
+        <div class="class-card-header" onclick="toggleGroup('{{ groupId }}')">
+          <div class="class-label">
+            <div class="class-avatar" style="background:{{ color }}20; color:{{ color }};">
+              {% if classe %}{{ classe.year }}{% else %}<i class="bi bi-question"></i>{% endif %}
+            </div>
+            <div>
+              <div class="fw-bold">
+                {% if classe %}{{ classe.level }} — {{ classe.name }}{% else %}Sans classe{% endif %}
+              </div>
+              <div class="text-muted" style="font-size:.78rem;">
+                {% if classe %}{{ classe.academicYear }} · {% endif %}
+                {{ studentCount }} étudiant{{ studentCount > 1 ? 's' : '' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <div class="stat-chips">
+              {% if group.assigned > 0 %}
+                <span class="chip chip-assigned"><i class="bi bi-clock"></i>{{ group.assigned }} affecté{{ group.assigned > 1 ? 's' : '' }}</span>
+              {% endif %}
+              {% if group.started > 0 %}
+                <span class="chip chip-started"><i class="bi bi-play-circle"></i>{{ group.started }} en cours</span>
+              {% endif %}
+              {% if group.submitted > 0 %}
+                <span class="chip chip-submitted"><i class="bi bi-check-circle"></i>{{ group.submitted }} soumis</span>
+              {% endif %}
+              {% if avg is not null %}
+                <span class="chip chip-avg"><i class="bi bi-bar-chart"></i>Moy. {{ avg }}/20</span>
+              {% endif %}
+            </div>
+            <i class="bi bi-chevron-down chevron text-muted" id="chevron-{{ groupId }}"></i>
+          </div>
+        </div>
+
+        {# ── Body (table des affectations) ── #}
+        <div class="class-card-body" id="body-{{ groupId }}">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Étudiant</th>
+                  <th>Examen</th>
+                  <th class="text-center">Statut</th>
+                  <th class="text-center">Note /20</th>
+                  <th class="text-center">Soumis le</th>
+                  <th class="text-center" style="width:60px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for studentId, studentGroup in group.students %}
+                  {% set exams = studentGroup.assignments %}
+                  {% for assignment in exams %}
+                    {% set s = assignment.status|upper %}
+                    {% set g = assignment.finalGrade %}
+                    <tr class="{% if loop.last %}student-separator{% endif %}">
+                      {% if loop.first %}
+                        <td rowspan="{{ exams|length }}" class="student-cell">
+                          <div class="fw-semibold">{{ studentGroup.student.fullName }}</div>
+                          <small class="text-muted">{{ studentGroup.student.email }}</small>
+                        </td>
+                      {% endif %}
+                      <td class="fw-semibold">{{ assignment.exam.title }}</td>
+                      <td class="text-center">
+                        {% if s == 'ASSIGNED' %}
+                          <span class="badge-assigned">Affecté</span>
+                        {% elseif s == 'STARTED' %}
+                          <span class="badge-started">En cours</span>
+                        {% elseif s == 'SUBMITTED' %}
+                          <span class="badge-submitted">Soumis</span>
+                        {% else %}
+                          <span class="text-muted small">{{ s }}</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-center">
+                        {% if g is not null %}
+                          <span class="grade-pill {% if g >= 14 %}grade-high{% elseif g >= 10 %}grade-mid{% else %}grade-low{% endif %}">
+                            {{ g|round(2) }}
+                          </span>
+                        {% else %}
+                          <span class="grade-pill grade-none">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-center text-muted small">
+                        {{ assignment.submittedAt ? assignment.submittedAt|date('d/m/Y H:i') : '—' }}
+                      </td>
+                      <td class="text-center">
+                        <form method="post"
+                              action="{{ path('teacher_assignment_delete', {id: assignment.id}) }}"
+                              onsubmit="return confirm('Supprimer cette affectation ?');">
+                          <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ assignment.id) }}">
+                          <button class="btn btn-sm btn-outline-danger p-1" style="width:30px;height:30px;" title="Supprimer">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    {% endfor %}
+  {% endif %}
+
 </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}{{ parent() }}
+<script>
+function toggleGroup(id) {
+  const body    = document.getElementById('body-'    + id);
+  const chevron = document.getElementById('chevron-' + id);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  chevron.classList.toggle('open', isOpen);
+  // Persist state in sessionStorage
+  sessionStorage.setItem('assign_group_' + id, isOpen ? '1' : '0');
+}
+
+// Restore open state on load
+document.addEventListener('DOMContentLoaded', () => {
+  const groups = document.querySelectorAll('[id^="body-"]');
+  groups.forEach(body => {
+    const id   = body.id.replace('body-', '');
+    const saved = sessionStorage.getItem('assign_group_' + id);
+    // Default: open if first group or if saved as open
+    const isFirst = body.closest('.class-card') === document.querySelector('.class-card');
+    if (saved === '1' || (saved === null && isFirst)) {
+      body.classList.add('open');
+      const ch = document.getElementById('chevron-' + id);
+      if (ch) ch.classList.add('open');
+    }
+  });
+});
+</script>
 {% endblock %}

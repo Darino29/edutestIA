@@ -67,13 +67,13 @@
     <h5 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Sujets les plus échoués</h5>
     <div class="d-flex flex-wrap gap-2">
       {% for topic in stats.weakTopics %}
-        <span class="badge bg-danger bg-opacity-15 text-danger" style="font-size:.85rem; padding:.4rem .8rem; border-radius:8px;">{{ topic }}</span>
+        <span class="badge text-danger fw-semibold" style="background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.25); font-size:.85rem; padding:.4rem .8rem; border-radius:8px;">{{ topic }}</span>
       {% endfor %}
     </div>
   </div>
   {% endif %}
 
-  {# Rapport IA #}
+  {# Rapport IA (chargé en AJAX pour ne pas bloquer la page) #}
   <div class="section-card">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <div class="d-flex align-items-center gap-3">
@@ -84,7 +84,7 @@
         </div>
       </div>
       <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-warning" id="play-btn">
+        <button class="btn btn-sm btn-outline-warning d-none" id="play-btn">
           <i class="fas fa-volume-up me-1"></i>Écouter
         </button>
         <button class="btn btn-sm btn-outline-danger d-none" id="stop-btn">
@@ -93,7 +93,11 @@
       </div>
     </div>
     <hr>
-    <div id="report-output" class="report-content"></div>
+    <div id="report-loading" class="text-center py-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="text-muted mt-2 small">Génération du rapport IA en cours…</p>
+    </div>
+    <div id="report-output" class="report-content" style="display:none;"></div>
   </div>
 
 </div>
@@ -104,29 +108,40 @@
 {{ parent() }}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const ta = document.createElement('textarea');
-  ta.innerHTML = `{{ report|escape('js') }}`;
-  const text = ta.value;
-  document.getElementById('report-output').innerHTML = marked.parse(text);
+  const outputEl  = document.getElementById('report-output');
+  const loadingEl = document.getElementById('report-loading');
+  const playBtn   = document.getElementById('play-btn');
+  const stopBtn   = document.getElementById('stop-btn');
 
-  const playBtn = document.getElementById('play-btn');
-  const stopBtn = document.getElementById('stop-btn');
+  fetch('{{ path('admin_ai_insights_report') }}')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.text) return;
+      const text = data.text;
+      outputEl.innerHTML  = marked.parse(text);
+      loadingEl.style.display = 'none';
+      outputEl.style.display  = '';
+      playBtn.classList.remove('d-none');
 
-  playBtn.addEventListener('click', function () {
-    if (speechSynthesis.speaking) return;
-    const plain = text.replace(/[#*_`~>\-]/g, '').trim();
-    const utt = new SpeechSynthesisUtterance(plain);
-    utt.lang = 'fr-FR'; utt.rate = 0.92;
-    utt.onend  = () => stopBtn.classList.add('d-none');
-    utt.onerror = () => stopBtn.classList.add('d-none');
-    stopBtn.classList.remove('d-none');
-    speechSynthesis.speak(utt);
-  });
+      playBtn.addEventListener('click', function () {
+        if (speechSynthesis.speaking) return;
+        const plain = text.replace(/[#*_`~>\-]/g, '').trim();
+        const utt = new SpeechSynthesisUtterance(plain);
+        utt.lang = 'fr-FR'; utt.rate = 0.92;
+        utt.onend  = () => stopBtn.classList.add('d-none');
+        utt.onerror = () => stopBtn.classList.add('d-none');
+        stopBtn.classList.remove('d-none');
+        speechSynthesis.speak(utt);
+      });
 
-  stopBtn.addEventListener('click', function () {
-    speechSynthesis.cancel();
-    this.classList.add('d-none');
-  });
+      stopBtn.addEventListener('click', function () {
+        speechSynthesis.cancel();
+        this.classList.add('d-none');
+      });
+    })
+    .catch(() => {
+      loadingEl.innerHTML = '<p class="text-danger small">Erreur lors de la génération du rapport.</p>';
+    });
 });
 </script>
 {% endblock %}

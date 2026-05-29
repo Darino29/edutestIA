@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Service\ProgressService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -21,27 +22,39 @@ class ProgressController extends AbstractController
     public function studentProgress(): Response
     {
         /** @var User $student */
-        $student         = $this->getUser();
-        $progress        = $this->progressService->getStudentProgress($student);
-        $recommendations = $this->progressService->getPersonalizedRecommendations($student);
+        $student  = $this->getUser();
+        $progress = $this->progressService->getStudentProgress($student);
 
         return $this->render('progress/student.html.twig', [
-            'progress'        => $progress,
-            'recommendations' => $recommendations,
+            'progress' => $progress,
         ]);
     }
 
+    #[Route('/student/progress/recommendations', name: 'student_progress_recommendations')]
+    #[IsGranted('ROLE_STUDENT')]
+    public function studentProgressRecommendations(): JsonResponse
+    {
+        /** @var User $student */
+        $student = $this->getUser();
+        $text    = $this->progressService->getPersonalizedRecommendations($student);
+
+        return $this->json(['text' => $text]);
+    }
+
     /**
-     * Vue enseignant : progression de tous les étudiants.
+     * Vue enseignant : progression des étudiants pour ses propres examens.
      */
     #[Route('/teacher/students/progress', name: 'teacher_students_progress')]
     #[IsGranted('ROLE_TEACHER')]
     public function teacherOverview(): Response
     {
-        $allProgress = $this->progressService->getAllStudentsProgress();
+        /** @var User $teacher */
+        $teacher     = $this->getUser();
+        $allProgress = $this->progressService->getAllStudentsProgressForTeacher($teacher);
 
         return $this->render('progress/teacher_overview.html.twig', [
             'allProgress' => $allProgress,
+            'teacher'     => $teacher,
         ]);
     }
 

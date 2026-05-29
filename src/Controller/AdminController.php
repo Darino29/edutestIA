@@ -6,8 +6,8 @@ use App\Entity\User;
 use App\Entity\Exam;
 use App\Entity\Assignment;
 use App\Service\GroqService;
-use App\Service\ProgressService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,29 +23,73 @@ class AdminController extends AbstractController
     public function dashboard(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $hasher
+        UserPasswordHasherInterface $hasher,
+        PaginatorInterface $paginator
     ): Response {
         $userRepo = $em->getRepository(User::class);
         $examRepo = $em->getRepository(Exam::class);
         $assignRepo = $em->getRepository(Assignment::class);
 
-        $teachers = $userRepo->findByRole('ROLE_TEACHER');
-        $students = $userRepo->findByRole('ROLE_STUDENT');
-        $exams = $examRepo->findAll();
-        $assignments = $assignRepo->findAll();
+        $teacherQuery = $em->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_TEACHER%')
+            ->orderBy('u.fullName', 'ASC')
+            ->getQuery();
 
-        // 📊 Statistiques globales
-        $totalTeachers = count($teachers);
-        $totalStudents = count($students);
-        $totalExams = count($exams);
-        $submitted = count(array_filter($assignments, fn($a) => $a->getStatus() === 'SUBMITTED'));
-        $submissionRate = count($assignments) > 0 ? round(($submitted / count($assignments)) * 100, 1) : 0;
+        $studentQuery = $em->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_STUDENT%')
+            ->orderBy('u.fullName', 'ASC')
+            ->getQuery();
 
-        // 📈 Données pour le graphique Chart.js
-        $chartData = [
-            'labels' => ['Enseignants', 'Étudiants', 'Examens', 'Soumissions'],
-            'values' => [$totalTeachers, $totalStudents, $totalExams, $submissionRate],
-        ];
+        $teachers = $paginator->paginate(
+            $teacherQuery,
+            $request->query->getInt('teacherPage', 1),
+            10,
+            ['pageParameterName' => 'teacherPage']
+        );
+
+        $students = $paginator->paginate(
+            $studentQuery,
+            $request->query->getInt('studentPage', 1),
+            10,
+            ['pageParameterName' => 'studentPage']
+        );
+
+        // COUNT queries (très rapides) au lieu de findAll()
+        $totalTeachers = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')->from(User::class, 'u')
+            ->where('u.roles LIKE :role')->setParameter('role', '%ROLE_TEACHER%')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalStudents = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')->from(User::class, 'u')
+            ->where('u.roles LIKE :role')->setParameter('role', '%ROLE_STUDENT%')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalExams = (int) $em->createQueryBuilder()
+            ->select('COUNT(e.id)')->from(Exam::class, 'e')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalAssignments = (int) $em->createQueryBuilder()
+            ->select('COUNT(a.id)')->from(Assignment::class, 'a')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalSubmitted = (int) $em->createQueryBuilder()
+            ->select('COUNT(a.id)')->from(Assignment::class, 'a')
+            ->where('a.status = :status')->setParameter('status', 'SUBMITTED')
+            ->getQuery()->getSingleScalarResult();
+
+        $submissionRate = $totalAssignments > 0
+            ? round(($totalSubmitted / $totalAssignments) * 100, 1)
+            : 0;
+
+        // Liste limitée aux 20 derniers examens pour le tableau
+        $exams = $examRepo->findBy([], ['id' => 'DESC'], 20);
 
         // 🧑‍💻 Création utilisateur rapide (optionnelle)
         if ($request->isMethod('POST')) {
@@ -74,83 +118,153 @@ class AdminController extends AbstractController
             }
         }
 
-        $recentAssignments = $assignRepo->createQueryBuilder('a')
+        $recentQuery = $assignRepo->createQueryBuilder('a')
             ->leftJoin('a.exam', 'e')->addSelect('e')
             ->leftJoin('a.student', 's')->addSelect('s')
             ->where('a.status = :status')
             ->setParameter('status', 'SUBMITTED')
             ->orderBy('a.submittedAt', 'DESC')
-            ->setMaxResults(15)
-            ->getQuery()
-            ->getResult();
+            ->getQuery();
+
+        $recentAssignments = $paginator->paginate(
+            $recentQuery,
+            $request->query->getInt('proctorPage', 1),
+            10,
+            ['pageParameterName' => 'proctorPage']
+        );
 
         return $this->render('admin/dashboard.html.twig', [
-            'teachers' => $teachers,
-            'students' => $students,
-            'exams' => $exams,
-            'totalTeachers' => $totalTeachers,
-            'totalStudents' => $totalStudents,
-            'totalExams' => $totalExams,
-            'submissionRate' => $submissionRate,
-            'chartData' => $chartData,
+            'teachers'          => $teachers,
+            'students'          => $students,
+            'exams'             => $exams,
+            'totalTeachers'     => $totalTeachers,
+            'totalStudents'     => $totalStudents,
+            'totalExams'        => $totalExams,
+            'submissionRate'    => $submissionRate,
             'recentAssignments' => $recentAssignments,
         ]);
     }
 
     #[Route('/ai-insights', name: 'admin_ai_insights')]
-    public function aiInsights(
-        EntityManagerInterface $em,
-        GroqService $groqService,
-        ProgressService $progressService,
-    ): Response {
-        $userRepo   = $em->getRepository(User::class);
-        $examRepo   = $em->getRepository(Exam::class);
-        $assignRepo = $em->getRepository(Assignment::class);
+    public function aiInsights(EntityManagerInterface $em): Response
+    {
+        $stats = $this->buildAiInsightsStats($em);
 
-        $students    = $userRepo->findByRole('ROLE_STUDENT');
-        $assignments = $assignRepo->findBy(['status' => 'SUBMITTED']);
+        return $this->render('admin/ai_insights.html.twig', ['stats' => $stats]);
+    }
+
+    #[Route('/ai-insights/report', name: 'admin_ai_insights_report')]
+    public function aiInsightsReport(EntityManagerInterface $em, GroqService $groqService): JsonResponse
+    {
+        $stats  = $this->buildAiInsightsStats($em);
+        $report = $groqService->generatePlatformInsights($stats);
+
+        return $this->json(['text' => $report]);
+    }
+
+    private function buildAiInsightsStats(EntityManagerInterface $em): array
+    {
+        // COUNT queries (très rapides)
+        $totalStudents = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')->from(User::class, 'u')
+            ->where('u.roles LIKE :role')->setParameter('role', '%ROLE_STUDENT%')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalTeachers = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')->from(User::class, 'u')
+            ->where('u.roles LIKE :role')->setParameter('role', '%ROLE_TEACHER%')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalExams = (int) $em->createQueryBuilder()
+            ->select('COUNT(e.id)')->from(Exam::class, 'e')
+            ->getQuery()->getSingleScalarResult();
+
+        $totalAssignments = (int) $em->createQueryBuilder()
+            ->select('COUNT(a.id)')->from(Assignment::class, 'a')
+            ->getQuery()->getSingleScalarResult();
+
+        // UNE seule requête pour tous les assignments soumis (exam + student eager-loaded)
+        $submitted = $em->createQueryBuilder()
+            ->select('a', 'e', 's')
+            ->from(Assignment::class, 'a')
+            ->join('a.exam', 'e')
+            ->join('a.student', 's')
+            ->where('a.status = :status')
+            ->setParameter('status', 'SUBMITTED')
+            ->getQuery()
+            ->getResult();
+
+        $submissionRate = $totalAssignments > 0
+            ? round(count($submitted) / $totalAssignments * 100, 1)
+            : 0;
 
         // Score moyen global
         $grades = array_filter(
-            array_map(fn($a) => $a->getFinalGrade(), $assignments),
+            array_map(fn($a) => $a->getFinalGrade(), $submitted),
             fn($g) => $g !== null
         );
-        $avgScore = count($grades) > 0 ? round(array_sum($grades) / count($grades) / 20 * 100, 1) : 0;
+        $avgScore = count($grades) > 0
+            ? round(array_sum($grades) / count($grades) / 20 * 100, 1)
+            : 0;
 
-        // Étudiants en difficulté + sujets échoués
+        // Étudiants en difficulté + sujets faibles — tout en PHP, sans requête supplémentaire
+        $studentTopics = [];
+        foreach ($submitted as $a) {
+            $grade = $a->getFinalGrade();
+            if ($grade === null) {
+                continue;
+            }
+            $sid   = $a->getStudent()->getId();
+            $topic = $a->getExam()->getTitle();
+            $studentTopics[$sid][$topic][] = ($grade / 20) * 100;
+        }
+
         $strugglingCount = 0;
         $topicFailCount  = [];
-
-        foreach ($students as $student) {
-            $progress = $progressService->getStudentProgress($student);
-            if (!empty($progress['toWork'])) {
-                $strugglingCount++;
-                foreach ($progress['toWork'] as $item) {
-                    $topicFailCount[$item['topic']] = ($topicFailCount[$item['topic']] ?? 0) + 1;
+        foreach ($studentTopics as $topics) {
+            $hasWeak = false;
+            foreach ($topics as $topic => $scores) {
+                if (array_sum($scores) / count($scores) < 50) {
+                    $hasWeak = true;
+                    $topicFailCount[$topic] = ($topicFailCount[$topic] ?? 0) + 1;
                 }
+            }
+            if ($hasWeak) {
+                $strugglingCount++;
             }
         }
 
         arsort($topicFailCount);
-        $weakTopics = array_slice(array_keys($topicFailCount), 0, 5);
 
-        $stats = [
-            'totalStudents'      => count($students),
-            'totalTeachers'      => count($userRepo->findByRole('ROLE_TEACHER')),
-            'totalExams'         => count($examRepo->findAll()),
-            'submissionRate'     => count($assignments) > 0
-                                    ? round(count($assignments) / max(1, count($assignRepo->findAll())) * 100, 1)
-                                    : 0,
+        return [
+            'totalStudents'      => $totalStudents,
+            'totalTeachers'      => $totalTeachers,
+            'totalExams'         => $totalExams,
+            'submissionRate'     => $submissionRate,
             'strugglingStudents' => $strugglingCount,
             'avgScore'           => $avgScore,
-            'weakTopics'         => $weakTopics,
+            'weakTopics'         => array_slice(array_keys($topicFailCount), 0, 5),
         ];
+    }
 
-        $report = $groqService->generatePlatformInsights($stats);
+    #[Route('/student/{id}/transcript', name: 'admin_student_transcript')]
+    public function studentTranscript(User $student, EntityManagerInterface $em): Response
+    {
+        $assignments = $em->getRepository(Assignment::class)
+            ->createQueryBuilder('a')
+            ->leftJoin('a.exam', 'e')->addSelect('e')
+            ->where('a.student = :student')
+            ->andWhere('a.status = :status')
+            ->setParameter('student', $student)
+            ->setParameter('status', 'SUBMITTED')
+            ->orderBy('a.submittedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
 
-        return $this->render('admin/ai_insights.html.twig', [
-            'report' => $report,
-            'stats'  => $stats,
+        return $this->render('exam_pass/transcript.html.twig', [
+            'student'     => $student,
+            'assignments' => $assignments,
+            'generatedAt' => new \DateTimeImmutable(),
         ]);
     }
 

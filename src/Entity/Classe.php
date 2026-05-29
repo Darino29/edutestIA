@@ -42,9 +42,14 @@ class Classe
     #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'classe')]
     private Collection $students;
 
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'classe_teachers')]
+    private Collection $teachers;
+
     public function __construct()
     {
         $this->students    = new ArrayCollection();
+        $this->teachers    = new ArrayCollection();
         $this->createdAt   = new \DateTimeImmutable();
         $this->academicYear = $this->buildAcademicYear();
     }
@@ -102,6 +107,23 @@ class Classe
                 $student->setClasse(null);
             }
         }
+        return $this;
+    }
+
+    /** @return Collection<int, User> */
+    public function getTeachers(): Collection { return $this->teachers; }
+
+    public function addTeacher(User $teacher): static
+    {
+        if (!$this->teachers->contains($teacher)) {
+            $this->teachers->add($teacher);
+        }
+        return $this;
+    }
+
+    public function removeTeacher(User $teacher): static
+    {
+        $this->teachers->removeElement($teacher);
         return $this;
     }
 }

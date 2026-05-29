@@ -239,7 +239,7 @@
             </div>
             <div class="card-body table-responsive">
               <table class="table table-hover align-middle">
-                <thead>
+                <thead class="table-light">
                   <tr><th>Nom</th><th>Email</th><th>Approuvé</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
@@ -256,27 +256,21 @@
                     </td>
                     <td class="text-end">
                       <div class="d-flex justify-content-end gap-2">
-
                         {% if not teacher.isApproved %}
                           <a href="{{ path('admin_approve_user', {id: teacher.id}) }}"
-                            class="btn btn-sm btn-success rounded-circle"
-                            title="Approuver">
+                            class="btn btn-sm btn-success rounded-circle" title="Approuver">
                             <i class="bi bi-check"></i>
                           </a>
                         {% else %}
                           <a href="{{ path('admin_ban_user', {id: teacher.id}) }}"
-                            class="btn btn-sm btn-secondary rounded-circle"
-                            title="Désactiver">
+                            class="btn btn-sm btn-secondary rounded-circle" title="Désactiver">
                             <i class="bi bi-slash"></i>
                           </a>
                         {% endif %}
-
                         <a href="{{ path('admin_delete_user', {id: teacher.id}) }}"
-                          class="btn btn-sm btn-danger rounded-circle"
-                          title="Supprimer">
+                          class="btn btn-sm btn-danger rounded-circle" title="Supprimer">
                           <i class="bi bi-trash"></i>
                         </a>
-
                       </div>
                     </td>
                   </tr>
@@ -285,6 +279,9 @@
                 {% endfor %}
                 </tbody>
               </table>
+              <div class="d-flex justify-content-center mt-2">
+                {{ knp_pagination_render(teachers) }}
+              </div>
             </div>
           </div>
         </div>
@@ -300,8 +297,8 @@
             </div>
             <div class="card-body table-responsive">
               <table class="table table-hover align-middle">
-                <thead>
-                  <tr><th>Nom</th><th>Email</th><th>Approuvé</th><th>Actions</th></tr>
+                <thead class="table-light">
+                  <tr><th>Nom</th><th>Email</th><th>Approuvé</th><th>Relevé</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                 {% for student in students %}
@@ -315,37 +312,40 @@
                         <span class="badge bg-warning text-dark">Non</span>
                       {% endif %}
                     </td>
+                    <td>
+                      <a href="{{ path('admin_student_transcript', {id: student.id}) }}"
+                        class="btn btn-sm btn-outline-info" title="Relevé de notes" target="_blank">
+                        <i class="bi bi-file-earmark-text"></i>
+                      </a>
+                    </td>
                     <td class="text-end">
                       <div class="d-flex justify-content-end gap-2">
-
                         {% if not student.isApproved %}
                           <a href="{{ path('admin_approve_user', {id: student.id}) }}"
-                            class="btn btn-sm btn-success rounded-circle"
-                            title="Approuver">
+                            class="btn btn-sm btn-success rounded-circle" title="Approuver">
                             <i class="bi bi-check"></i>
                           </a>
                         {% else %}
                           <a href="{{ path('admin_ban_user', {id: student.id}) }}"
-                            class="btn btn-sm btn-secondary rounded-circle"
-                            title="Désactiver">
+                            class="btn btn-sm btn-secondary rounded-circle" title="Désactiver">
                             <i class="bi bi-slash"></i>
                           </a>
                         {% endif %}
-
                         <a href="{{ path('admin_delete_user', {id: student.id}) }}"
-                          class="btn btn-sm btn-danger rounded-circle"
-                          title="Supprimer">
+                          class="btn btn-sm btn-danger rounded-circle" title="Supprimer">
                           <i class="bi bi-trash"></i>
                         </a>
-
                       </div>
                     </td>
                   </tr>
                 {% else %}
-                  <tr><td colspan="4" class="text-center text-muted">Aucun étudiant trouvé.</td></tr>
+                  <tr><td colspan="5" class="text-center text-muted">Aucun étudiant trouvé.</td></tr>
                 {% endfor %}
                 </tbody>
               </table>
+              <div class="d-flex justify-content-center mt-2">
+                {{ knp_pagination_render(students) }}
+              </div>
             </div>
           </div>
         </div>
@@ -399,15 +399,16 @@
     {# ========================== ANTI-TRICHE — TENTATIVES RÉCENTES ========================== #}
     <section class="mb-4 mt-5">
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-white border-0 d-flex align-items-center">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
           <h5 class="mb-0">
             <i class="bi bi-shield-exclamation me-2 text-danger"></i>
             Anti-triche — tentatives récentes
           </h5>
+          <small class="text-muted">{{ recentAssignments.getTotalItemCount }} soumission{{ recentAssignments.getTotalItemCount > 1 ? 's' : '' }}</small>
         </div>
 
         <div class="card-body">
-          {% if recentAssignments is defined and recentAssignments|length > 0 %}
+          {% if recentAssignments|length > 0 %}
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0">
                 <thead>
@@ -446,6 +447,9 @@
                   {% endfor %}
                 </tbody>
               </table>
+            </div>
+            <div class="d-flex justify-content-center mt-3">
+              {{ knp_pagination_render(recentAssignments) }}
             </div>
           {% else %}
             <p class="text-center text-muted mb-0">Aucune tentative soumise.</p>

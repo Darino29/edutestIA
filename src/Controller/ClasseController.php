@@ -57,14 +57,23 @@ class ClasseController extends AbstractController
     #[Route('/{id}', name: 'admin_classes_show')]
     public function show(Classe $classe, UserRepository $userRepo): Response
     {
+        $currentStudentIds = $classe->getStudents()->map(fn(User $u) => $u->getId())->toArray();
+        $currentTeacherIds = $classe->getTeachers()->map(fn(User $u) => $u->getId())->toArray();
+
         $availableStudents = array_filter(
             $userRepo->findByRole('ROLE_STUDENT'),
-            fn(User $u) => $u->isApproved() && $u->getClasse() === null
+            fn(User $u) => $u->isApproved() && !in_array($u->getId(), $currentStudentIds, true)
+        );
+
+        $availableTeachers = array_filter(
+            $userRepo->findByRole('ROLE_TEACHER'),
+            fn(User $u) => $u->isApproved() && !in_array($u->getId(), $currentTeacherIds, true)
         );
 
         return $this->render('classe/show.html.twig', [
-            'classe'            => $classe,
-            'availableStudents' => array_values($availableStudents),
+            'classe'             => $classe,
+            'availableStudents'  => array_values($availableStudents),
+            'availableTeachers'  => array_values($availableTeachers),
         ]);
     }
 
@@ -132,6 +141,44 @@ class ClasseController extends AbstractController
         }
 
         $student->setClasse(null);
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/{id}/add-teacher', name: 'admin_classes_add_teacher', methods: ['POST'])]
+    public function addTeacher(Classe $classe, Request $request, EntityManagerInterface $em, UserRepository $userRepo): JsonResponse
+    {
+        $teacherId = (int) $request->request->get('teacherId');
+        $teacher   = $userRepo->find($teacherId);
+
+        if (!$teacher || !in_array('ROLE_TEACHER', $teacher->getRoles(), true)) {
+            return $this->json(['error' => 'Enseignant introuvable.'], 404);
+        }
+
+        $classe->addTeacher($teacher);
+        $em->flush();
+
+        return $this->json([
+            'success' => true,
+            'teacher' => [
+                'id'       => $teacher->getId(),
+                'fullName' => $teacher->getFullName(),
+                'email'    => $teacher->getEmail(),
+            ],
+        ]);
+    }
+
+    #[Route('/{id}/remove-teacher/{userId}', name: 'admin_classes_remove_teacher', methods: ['POST'])]
+    public function removeTeacher(Classe $classe, int $userId, EntityManagerInterface $em, UserRepository $userRepo): JsonResponse
+    {
+        $teacher = $userRepo->find($userId);
+
+        if (!$teacher) {
+            return $this->json(['error' => 'Enseignant introuvable.'], 404);
+        }
+
+        $classe->removeTeacher($teacher);
         $em->flush();
 
         return $this->json(['success' => true]);

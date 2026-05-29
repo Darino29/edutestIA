@@ -203,8 +203,8 @@
       }
 
       /* ===== CHATBOT ===== */
+      #chatbot-fab-wrapper { position: fixed; bottom: 28px; right: 28px; z-index: 1050; }
       #chatbot-fab {
-        position: fixed; bottom: 28px; right: 28px; z-index: 1050;
         width: 56px; height: 56px; border-radius: 50%;
         background: linear-gradient(135deg, var(--edu-indigo), #7C3AED);
         border: none; color: #fff; font-size: 1.4rem;
@@ -213,6 +213,17 @@
         display: flex; align-items: center; justify-content: center;
       }
       #chatbot-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,.55); }
+      .chatbot-beta-fab {
+        position: absolute; top: -4px; right: -4px;
+        background: #F59E0B; color: #fff; font-size: 0.55rem; font-weight: 700;
+        letter-spacing: 0.04em; padding: 1px 5px; border-radius: 20px;
+        border: 2px solid #fff; line-height: 1.6; pointer-events: none;
+      }
+      .chatbot-beta-header {
+        display: inline-block; background: rgba(255,255,255,.22); color: #fff;
+        font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+        padding: 1px 6px; border-radius: 20px; vertical-align: middle; margin-left: 6px;
+      }
 
       #chatbot-panel {
         position: fixed; bottom: 96px; right: 28px; z-index: 1049;
@@ -246,6 +257,13 @@
       .chat-msg.user { align-self: flex-end; background: linear-gradient(135deg, var(--edu-primary), var(--edu-primary-dk)); color:#fff; border-bottom-right-radius: 4px; }
       .chat-msg.bot  { align-self: flex-start; background: #F1F5F9; color: var(--edu-text); border-bottom-left-radius: 4px; }
       .chat-msg.bot.typing { color: var(--edu-muted); font-style: italic; }
+      .chat-msg.bot p { margin-bottom: 0.35rem; }
+      .chat-msg.bot p:last-child { margin-bottom: 0; }
+      .chat-msg.bot ul, .chat-msg.bot ol { padding-left: 1.2rem; margin: 0.25rem 0; }
+      .chat-msg.bot li { margin-bottom: 0.15rem; }
+      .chat-msg.bot code { background: rgba(0,0,0,.07); border-radius: 4px; padding: 0.1rem 0.3rem; font-size: 0.8rem; font-family: monospace; }
+      .chat-msg.bot strong { color: var(--edu-text); font-weight: 700; }
+      .chat-msg.bot a { color: var(--edu-primary); }
 
       .chatbot-limit-bar { padding: 0.35rem 1rem; background: #F8FAFC; border-top: 1px solid var(--edu-border); text-align: right; }
       .chatbot-limit-bar small { color: var(--edu-muted); font-size: 0.72rem; }
@@ -270,17 +288,21 @@
 
     {# ========================== # SCRIPTS JS # ========================== #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     {% if app.user %}
     {# ===== CHATBOT FLOTTANT ===== #}
-    <button id="chatbot-fab" title="EduBot – Assistant IA">
-      <i class="bi bi-chat-dots-fill"></i>
-    </button>
+    <div id="chatbot-fab-wrapper">
+      <button id="chatbot-fab" title="EduBot – Assistant IA">
+        <i class="bi bi-chat-dots-fill"></i>
+      </button>
+      <span class="chatbot-beta-fab">BETA</span>
+    </div>
 
     <div id="chatbot-panel">
       <div class="chatbot-header">
         <div>
-          <h6><i class="bi bi-robot me-2"></i>EduBot</h6>
+          <h6><i class="bi bi-robot me-2"></i>EduBot<span class="chatbot-beta-header">BETA</span></h6>
           <small>Assistant pédagogique IA</small>
         </div>
         <button class="chat-close-btn" id="chat-close"><i class="bi bi-x-lg"></i></button>
@@ -352,10 +374,14 @@
 
       closeBtn.addEventListener('click', () => { isOpen = false; panel.classList.remove('open'); });
 
-      function appendMsg(role, text) {
+      function appendMsg(role, text, isMarkdown) {
         const div = document.createElement('div');
         div.className = 'chat-msg ' + role;
-        div.textContent = text;
+        if (isMarkdown && typeof marked !== 'undefined') {
+          div.innerHTML = marked.parse(text);
+        } else {
+          div.textContent = text;
+        }
         messagesEl.appendChild(div);
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return div;
@@ -372,11 +398,11 @@
 
         input.value = '';
         sendBtn.disabled = true;
-        appendMsg('user', text);
+        appendMsg('user', text, false);
 
         conversation.push({ role: 'user', content: text });
 
-        const typing = appendMsg('bot typing', '…');
+        const typing = appendMsg('bot typing', '…', false);
 
         try {
           const res = await fetch('/ai/chat', {
@@ -387,7 +413,11 @@
           const data = await res.json();
           const reply = data.reply || 'Désolé, une erreur est survenue.';
           typing.className = 'chat-msg bot';
-          typing.textContent = reply;
+          if (typeof marked !== 'undefined') {
+            typing.innerHTML = marked.parse(reply);
+          } else {
+            typing.textContent = reply;
+          }
           conversation.push({ role: 'assistant', content: reply });
         } catch {
           typing.className = 'chat-msg bot';

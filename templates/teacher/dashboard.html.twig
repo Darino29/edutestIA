@@ -46,7 +46,7 @@
     }
 
     .table thead th {
-      background-color: #000000;
+      background-color: #f8fafc;
     }
 
     .section-title {
@@ -95,15 +95,33 @@
     </div>
 
     {# ========================== STATISTIQUES ========================== #}
+    {# Calcul moyenne générale via une boucle simple #}
+    {% set meanSum = 0 %}
+    {% set meanCount = 0 %}
+    {% for s in stats %}
+      {% if s.mean is not null %}
+        {% set meanSum = meanSum + s.mean %}
+        {% set meanCount = meanCount + 1 %}
+      {% endif %}
+    {% endfor %}
+    {% set globalMean = meanCount > 0 ? (meanSum / meanCount)|round(2) : null %}
+
+    {% set passedExamsCount = 0 %}
+    {% set totalGradedCount = 0 %}
+    {% for s in stats %}
+      {% if s.mean is not null %}
+        {% set totalGradedCount = totalGradedCount + 1 %}
+        {% if s.mean >= 10 %}{% set passedExamsCount = passedExamsCount + 1 %}{% endif %}
+      {% endif %}
+    {% endfor %}
+
     <div class="row g-3 mb-4">
-      <div class="col-md-3 col-sm-6">
+      <div class="col-md-2 col-sm-6">
         <div class="card shadow-sm border-0 p-3 h-100 admin-stat-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="admin-stat-icon text-primary">
-              <i class="bi bi-journal-text"></i>
-            </div>
+            <div class="admin-stat-icon text-primary"><i class="bi bi-journal-text"></i></div>
           </div>
-          <div class="admin-stat-title text-muted mb-1">Total d’examens</div>
+          <div class="admin-stat-title text-muted mb-1">Examens créés</div>
           <div class="h4 fw-bold mb-0">
             {% set totalExams = exams is defined ? (exams.getTotalItemCount ?? exams|length) : stats|length %}
             {{ totalExams }}
@@ -111,39 +129,65 @@
         </div>
       </div>
 
-      <div class="col-md-3 col-sm-6">
+      <div class="col-md-2 col-sm-6">
         <div class="card shadow-sm border-0 p-3 h-100 admin-stat-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="admin-stat-icon text-success">
-              <i class="bi bi-people-fill"></i>
-            </div>
+            <div class="admin-stat-icon text-success"><i class="bi bi-people-fill"></i></div>
           </div>
-          <div class="admin-stat-title text-muted mb-1">Total d’assignations</div>
+          <div class="admin-stat-title text-muted mb-1">Assignations</div>
           <div class="h4 fw-bold mb-0">{{ totalAssignments|default(0) }}</div>
         </div>
       </div>
 
-      <div class="col-md-3 col-sm-6">
+      <div class="col-md-2 col-sm-6">
         <div class="card shadow-sm border-0 p-3 h-100 admin-stat-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="admin-stat-icon text-info">
-              <i class="bi bi-bar-chart-fill"></i>
-            </div>
+            <div class="admin-stat-icon text-info"><i class="bi bi-bar-chart-fill"></i></div>
           </div>
           <div class="admin-stat-title text-muted mb-1">Taux de soumission</div>
           <div class="h4 fw-bold mb-0">{{ submissionRate|default(0) }}%</div>
         </div>
       </div>
 
-      <div class="col-md-3 col-sm-6">
+      <div class="col-md-2 col-sm-6">
         <div class="card shadow-sm border-0 p-3 h-100 admin-stat-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="admin-stat-icon text-warning">
-              <i class="bi bi-person-check-fill"></i>
-            </div>
+            <div class="admin-stat-icon text-warning"><i class="bi bi-person-check-fill"></i></div>
           </div>
           <div class="admin-stat-title text-muted mb-1">Étudiants évalués</div>
           <div class="h4 fw-bold mb-0">{{ uniqueStudentsCount|default(0) }}</div>
+        </div>
+      </div>
+
+      <div class="col-md-2 col-sm-6">
+        <div class="card shadow-sm border-0 p-3 h-100 admin-stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="admin-stat-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-graph-up-arrow"></i></div>
+          </div>
+          <div class="admin-stat-title text-muted mb-1">Moyenne générale</div>
+          {% if globalMean is not null %}
+            <div class="h4 fw-bold mb-0" style="color:{% if globalMean >= 10 %}#16a34a{% else %}#dc2626{% endif %}">
+              {{ globalMean|round(2) }} /20
+            </div>
+          {% else %}
+            <div class="h4 fw-bold mb-0 text-muted">—</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-md-2 col-sm-6">
+        <div class="card shadow-sm border-0 p-3 h-100 admin-stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="admin-stat-icon" style="background:#fef9c3;color:#d97706;"><i class="bi bi-trophy-fill"></i></div>
+          </div>
+          <div class="admin-stat-title text-muted mb-1">Taux de réussite</div>
+          <div class="h4 fw-bold mb-0" style="color:#d97706;">
+            {% if totalGradedCount > 0 %}
+              {{ ((passedExamsCount / totalGradedCount) * 100)|round(0) }}%
+            {% else %}
+              —
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
@@ -176,7 +220,7 @@
         <div class="card-body">
           <div class="table-responsive">
             <table class="table table-hover align-middle">
-              <thead class="table-dark">
+              <thead class="table-light">
                 <tr>
                   <th>Examen</th>
                   <th class="text-center">Copies rendues</th>
@@ -243,12 +287,13 @@
           <h5 class="mb-0 text-primary">
             <i class="bi bi-shield-check me-2"></i> Tentatives récentes (anti-triche)
           </h5>
+          <small class="text-muted">{{ recentAssignments.getTotalItemCount }} soumission{{ recentAssignments.getTotalItemCount > 1 ? 's' : '' }}</small>
         </div>
 
         <div class="card-body">
           <div class="table-responsive">
             <table class="table table-hover align-middle">
-              <thead class="table-dark">
+              <thead class="table-light">
                 <tr>
                   <th>Étudiant</th>
                   <th>Examen</th>
@@ -288,6 +333,9 @@
                 {% endfor %}
               </tbody>
             </table>
+          </div>
+          <div class="d-flex justify-content-center mt-3">
+            {{ knp_pagination_render(recentAssignments) }}
           </div>
         </div>
       </div>
