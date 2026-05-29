@@ -51,7 +51,7 @@ RUN mkdir -p var/cache var/log \
     && chown -R www-data:www-data var public
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/app.ini
-COPY docker/php-fpm.conf /usr/local/etc/php/php-fpm.d/www.conf
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /entrypoint.sh
