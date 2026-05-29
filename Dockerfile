@@ -26,6 +26,8 @@ RUN composer install \
     --prefer-dist \
     && composer dump-autoload --optimize --no-dev
 
+RUN echo "APP_ENV=prod\nAPP_DEBUG=0" > .env
+
 RUN mkdir -p var/cache var/log \
     && php bin/console importmap:install --no-interaction 2>/dev/null || true \
     && APP_ENV=prod APP_SECRET=dummy php bin/console assets:install public --no-interaction 2>/dev/null || true \
