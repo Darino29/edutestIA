@@ -1,21 +1,22 @@
-FROM php:8.2-fpm-alpine AS base
+FROM php:8.2-fpm
 
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    oniguruma-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
     libxml2-dev \
     libzip-dev \
-    icu-dev \
+    libicu-dev \
     zip \
     unzip \
     nginx \
     supervisor \
     nodejs \
-    npm
+    npm \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
@@ -27,10 +28,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         gd \
         intl \
         opcache \
-        zip \
-        xml \
-        ctype \
-        iconv
+        zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
