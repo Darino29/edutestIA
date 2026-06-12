@@ -232,8 +232,9 @@ final class AssignmentController extends AbstractController
         }
 
         return $this->render('assignment/assign_class.html.twig', [
-            'exams'   => $exams,
-            'classes' => $classes,
+            'exams'          => $exams,
+            'classes'        => $classes,
+            'selectedExamId' => (int) $request->query->get('exam', 0),
         ]);
     }
 

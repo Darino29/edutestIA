@@ -55,7 +55,7 @@
           <select class="form-select" name="exam" required>
             <option value="">-- Choisir un examen --</option>
             {% for exam in exams %}
-              <option value="{{ exam.id }}">{{ exam.title }}</option>
+              <option value="{{ exam.id }}"{{ selectedExamId == exam.id ? ' selected' : '' }}>{{ exam.title }}</option>
             {% endfor %}
           </select>
         </div>
