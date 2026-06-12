@@ -119,15 +119,22 @@
       <p class="text-muted small mb-0">Affectations regroupées par classe</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="{{ path('teacher_assignment_assign_class', exam is defined and exam ? {exam: exam.id} : {}) }}" class="btn btn-primary btn-sm">
+      {% set assignClassParams = (exam is defined and exam) ? {exam: exam.id} : {} %}
+      <a href="{{ path('teacher_assignment_assign_class', assignClassParams) }}" class="btn btn-primary btn-sm">
         <i class="bi bi-building me-1"></i> Affecter par classe
       </a>
       <a href="{{ path('teacher_assignment_new') }}" class="btn btn-outline-success btn-sm">
         <i class="bi bi-person-plus me-1"></i> Affectation individuelle
       </a>
-      <a href="{{ path('teacher_dashboard') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i> Tableau de bord
-      </a>
+      {% if currentExamId %}
+        <a href="{{ path('app_exam_show', {id: currentExamId}) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i> Retour à l'examen
+        </a>
+      {% else %}
+        <a href="{{ path('teacher_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i> Tableau de bord
+        </a>
+      {% endif %}
     </div>
   </div>
 
@@ -222,7 +229,7 @@
       <i class="bi bi-inbox fs-1 mb-3 d-block opacity-50"></i>
       <h5>Aucune affectation trouvée</h5>
       <p class="small">Modifiez les filtres ou créez une nouvelle affectation.</p>
-      <a href="{{ path('teacher_assignment_assign_class', exam is defined and exam ? {exam: exam.id} : {}) }}" class="btn btn-primary btn-sm mt-1">
+      <a href="{{ path('teacher_assignment_assign_class', assignClassParams) }}" class="btn btn-primary btn-sm mt-1">
         <i class="bi bi-building me-1"></i>Affecter à une classe
       </a>
     </div>
