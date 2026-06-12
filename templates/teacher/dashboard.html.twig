@@ -254,14 +254,18 @@
                       {% endif %}
                     </td>
                     <td class="text-center">
-                      <a href="{{ path('admin_exam_export_csv', {id: s.exam.id}) }}"
-                         class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
-                      </a>
-                      <a href="{{ path('teacher_exam_export_pdf', {id: s.exam.id}) }}"
-                         class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-file-earmark-pdf"></i> PDF
-                      </a>
+                      {% if s.count > 0 and s.mean is not null %}
+                        <a href="{{ path('admin_exam_export_csv', {id: s.exam.id}) }}"
+                           class="btn btn-sm btn-outline-success">
+                          <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                        </a>
+                        <a href="{{ path('admin_exam_export_pdf', {id: s.exam.id}) }}"
+                           class="btn btn-sm btn-outline-danger">
+                          <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </a>
+                      {% else %}
+                        <span class="text-muted small">Aucune note</span>
+                      {% endif %}
                     </td>
                   </tr>
                 {% else %}

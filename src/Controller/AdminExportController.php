@@ -30,23 +30,26 @@ class AdminExportController extends AbstractController
 
         return new StreamedResponse(function() use ($exam) {
             $csv = Writer::createFromFileObject(new \SplTempFileObject());
-            $csv->insertOne(['Étudiant', 'Email', 'Note (/20)', 'Soumis le']);
+            $csv->setOutputBOM(Writer::BOM_UTF8);
+            $csv->insertOne([‘Étudiant’, ‘Email’, ‘Note (/20)’, ‘Soumis le’]);
 
-            // Parcours des affectations liées à l’examen
             foreach ($exam->getAssignments() as $assignment) {
+                if ($assignment->getFinalGrade() === null) {
+                    continue;
+                }
                 $student = $assignment->getStudent();
                 $csv->insertOne([
-                    $student?->getFullName() ?? '',
-                    $student?->getEmail() ?? '',
-                    $assignment->getFinalGrade() ?? '',
-                    $assignment->getSubmittedAt()?->format('Y-m-d H:i') ?? '',
+                    $student?->getFullName() ?? ‘’,
+                    $student?->getEmail() ?? ‘’,
+                    number_format((float) $assignment->getFinalGrade(), 2, ‘.’, ‘’),
+                    $assignment->getSubmittedAt()?->format(‘d/m/Y H:i’) ?? ‘’,
                 ]);
             }
 
             echo (string) $csv;
         }, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="exam_'.$exam->getId().'.csv"',
+            ‘Content-Type’ => ‘text/csv; charset=UTF-8’,
+            ‘Content-Disposition’ => ‘attachment; filename="exam_’.$exam->getId().’_resultats.csv"’,
         ]);
     }
 
