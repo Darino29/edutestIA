@@ -82,7 +82,7 @@ class AdminExportController extends AbstractController
 
         return new Response($pdfContent, 200, [
             'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="exam_'.$exam->getId().'_resultats.pdf"',
+            'Content-Disposition' => 'attachment; filename="exam_'.$exam->getId().'_resultats.pdf"',
         ]);
     }
 }

@@ -116,26 +116,26 @@
           <i class="bi bi-person-workspace me-2"></i>Enseignants
           <span class="badge bg-success-subtle text-success ms-1">{{ classe.teachers|length }}</span>
         </h5>
-        {% if classe.teachers is empty %}
-          <p class="text-muted text-center py-3 small">Aucun enseignant assigné.</p>
-        {% else %}
-          <div id="teachers-list">
-          {% for teacher in classe.teachers %}
-            <div class="member-row" id="trow-{{ teacher.id }}">
-              <div class="d-flex align-items-center gap-3">
-                <div class="member-avatar avatar-teacher">{{ teacher.fullName|first|upper }}</div>
-                <div>
-                  <div class="fw-semibold small">{{ teacher.fullName }}</div>
-                  <div class="text-muted" style="font-size:.72rem;">{{ teacher.email }}</div>
+        <div id="teachers-list">
+          {% if classe.teachers is empty %}
+            <p class="text-muted text-center py-3 small" id="no-teachers-msg">Aucun enseignant assigné.</p>
+          {% else %}
+            {% for teacher in classe.teachers %}
+              <div class="member-row" id="trow-{{ teacher.id }}">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="member-avatar avatar-teacher">{{ teacher.fullName|first|upper }}</div>
+                  <div>
+                    <div class="fw-semibold small">{{ teacher.fullName }}</div>
+                    <div class="text-muted" style="font-size:.72rem;">{{ teacher.email }}</div>
+                  </div>
                 </div>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeTeacher({{ teacher.id }}, this)" title="Retirer">
+                  <i class="bi bi-x-lg"></i>
+                </button>
               </div>
-              <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeTeacher({{ teacher.id }}, this)" title="Retirer">
-                <i class="bi bi-x-lg"></i>
-              </button>
-            </div>
-          {% endfor %}
-          </div>
-        {% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
       </div>
 
       {# ÉTUDIANTS #}
@@ -144,26 +144,26 @@
           <i class="bi bi-people-fill me-2"></i>Étudiants
           <span class="badge bg-primary-subtle text-primary ms-1">{{ classe.students|length }}</span>
         </h5>
-        {% if classe.students is empty %}
-          <p class="text-muted text-center py-3 small">Aucun étudiant dans cette classe.</p>
-        {% else %}
-          <div id="students-list">
-          {% for student in classe.students %}
-            <div class="member-row" id="srow-{{ student.id }}">
-              <div class="d-flex align-items-center gap-3">
-                <div class="member-avatar avatar-student">{{ student.fullName|first|upper }}</div>
-                <div>
-                  <div class="fw-semibold small">{{ student.fullName }}</div>
-                  <div class="text-muted" style="font-size:.72rem;">{{ student.email }}</div>
+        <div id="students-list">
+          {% if classe.students is empty %}
+            <p class="text-muted text-center py-3 small" id="no-students-msg">Aucun étudiant dans cette classe.</p>
+          {% else %}
+            {% for student in classe.students %}
+              <div class="member-row" id="srow-{{ student.id }}">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="member-avatar avatar-student">{{ student.fullName|first|upper }}</div>
+                  <div>
+                    <div class="fw-semibold small">{{ student.fullName }}</div>
+                    <div class="text-muted" style="font-size:.72rem;">{{ student.email }}</div>
+                  </div>
                 </div>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeStudent({{ student.id }}, this)" title="Retirer">
+                  <i class="bi bi-x-lg"></i>
+                </button>
               </div>
-              <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeStudent({{ student.id }}, this)" title="Retirer">
-                <i class="bi bi-x-lg"></i>
-              </button>
-            </div>
-          {% endfor %}
-          </div>
-        {% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
       </div>
 
     </div>
@@ -178,12 +178,12 @@
         <h5 class="fw-bold mb-3 text-success">
           <i class="bi bi-person-plus-fill me-2"></i>Ajouter des enseignants
         </h5>
-        {% if availableTeachers is empty %}
-          <p class="text-muted small text-center py-2">Tous les enseignants sont déjà assignés.</p>
-        {% else %}
-          <input type="text" class="form-control form-control-sm mb-2" id="teacher-search"
-                 placeholder="Rechercher un enseignant..." oninput="filterList('teacher')">
-          <div class="pick-list" id="teacher-pick">
+        <input type="text" class="form-control form-control-sm mb-2" id="teacher-search"
+               placeholder="Rechercher un enseignant..." oninput="filterList('teacher')">
+        <div class="pick-list" id="teacher-pick">
+          {% if availableTeachers is empty %}
+            <p class="text-muted small text-center py-2" id="no-teacher-pick-msg">Tous les enseignants sont déjà assignés.</p>
+          {% else %}
             {% for teacher in availableTeachers %}
               <div class="pick-row teacher-option"
                    data-name="{{ teacher.fullName|lower }}"
@@ -198,14 +198,14 @@
                   </div>
                 </div>
                 <button class="btn btn-sm btn-outline-success py-0 px-2"
-                        onclick="addTeacher({{ teacher.id }}, {{ teacher.fullName|json_encode|raw }}, {{ teacher.email|json_encode|raw }}, this)"
+                        onclick="addTeacher({{ teacher.id }}, this)"
                         title="Ajouter">
                   <i class="bi bi-plus-lg"></i>
                 </button>
               </div>
             {% endfor %}
-          </div>
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
 
       {# AJOUTER ÉTUDIANTS #}
@@ -213,12 +213,12 @@
         <h5 class="fw-bold mb-3 text-primary">
           <i class="bi bi-person-plus-fill me-2"></i>Ajouter des étudiants
         </h5>
-        {% if availableStudents is empty %}
-          <p class="text-muted small text-center py-2">Aucun étudiant disponible.</p>
-        {% else %}
-          <input type="text" class="form-control form-control-sm mb-2" id="student-search"
-                 placeholder="Rechercher un étudiant..." oninput="filterList('student')">
-          <div class="pick-list" id="student-pick">
+        <input type="text" class="form-control form-control-sm mb-2" id="student-search"
+               placeholder="Rechercher un étudiant..." oninput="filterList('student')">
+        <div class="pick-list" id="student-pick">
+          {% if availableStudents is empty %}
+            <p class="text-muted small text-center py-2" id="no-student-pick-msg">Aucun étudiant disponible.</p>
+          {% else %}
             {% for student in availableStudents %}
               <div class="pick-row student-option"
                    data-name="{{ student.fullName|lower }}"
@@ -230,22 +230,17 @@
                   <div>
                     <div class="fw-semibold small">{{ student.fullName }}</div>
                     <div class="text-muted" style="font-size:.7rem;">{{ student.email }}</div>
-                    {% if student.classe %}
-                      <span class="tag-other-class">
-                        <i class="bi bi-arrow-right-circle"></i> {{ student.classe.level }} {{ student.classe.name }}
-                      </span>
-                    {% endif %}
                   </div>
                 </div>
                 <button class="btn btn-sm btn-outline-primary py-0 px-2"
-                        onclick="addStudent({{ student.id }}, {{ student.fullName|json_encode|raw }}, {{ student.email|json_encode|raw }}, this)"
+                        onclick="addStudent({{ student.id }}, this)"
                         title="Ajouter">
                   <i class="bi bi-plus-lg"></i>
                 </button>
               </div>
             {% endfor %}
-          </div>
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
 
     </div>
@@ -268,7 +263,7 @@ function filterList(type) {
 }
 
 /* ── TEACHERS ── */
-async function addTeacher(id, fullName, email, btn) {
+async function addTeacher(id, btn) {
   btn.disabled = true;
   const fd = new FormData();
   fd.append('teacherId', id);
@@ -285,14 +280,19 @@ async function addTeacher(id, fullName, email, btn) {
 async function removeTeacher(id, btn) {
   if (!confirm('Retirer cet enseignant de la classe ?')) return;
   btn.disabled = true;
+  const row  = document.getElementById('trow-' + id);
+  const name = row?.querySelector('.fw-semibold.small')?.textContent.trim() ?? '';
+  const email = row?.querySelectorAll('.text-muted')[0]?.textContent.trim() ?? '';
   const res  = await fetch(`/admin/classes/${classeId}/remove-teacher/${id}`, { method: 'POST' });
   const data = await res.json();
-  if (data.success) { document.getElementById('trow-' + id)?.remove(); }
-  else { alert(data.error || 'Erreur.'); btn.disabled = false; }
+  if (data.success) {
+    row?.remove();
+    appendPickRow('teacher', id, name, email);
+  } else { alert(data.error || 'Erreur.'); btn.disabled = false; }
 }
 
 /* ── STUDENTS ── */
-async function addStudent(id, fullName, email, btn) {
+async function addStudent(id, btn) {
   btn.disabled = true;
   const fd = new FormData();
   fd.append('studentId', id);
@@ -309,30 +309,26 @@ async function addStudent(id, fullName, email, btn) {
 async function removeStudent(id, btn) {
   if (!confirm('Retirer cet étudiant de la classe ?')) return;
   btn.disabled = true;
+  const row  = document.getElementById('srow-' + id);
+  const name = row?.querySelector('.fw-semibold.small')?.textContent.trim() ?? '';
+  const email = row?.querySelectorAll('.text-muted')[0]?.textContent.trim() ?? '';
   const res  = await fetch(`/admin/classes/${classeId}/remove-student/${id}`, { method: 'POST' });
   const data = await res.json();
-  if (data.success) { document.getElementById('srow-' + id)?.remove(); }
-  else { alert(data.error || 'Erreur.'); btn.disabled = false; }
+  if (data.success) {
+    row?.remove();
+    appendPickRow('student', id, name, email);
+  } else { alert(data.error || 'Erreur.'); btn.disabled = false; }
 }
 
 /* ── Helper : injecter une ligne dans la liste ── */
 function appendMember(listId, id, fullName, email, type) {
-  let list = document.getElementById(listId);
-  if (!list) {
-    const card = document.querySelector(`#${listId}`)?.closest('.section-card');
-    if (card) {
-      const p = card.querySelector('p.text-muted');
-      if (p) {
-        const div = document.createElement('div');
-        div.id = listId;
-        p.replaceWith(div);
-        list = div;
-      }
-    }
-  }
+  const list = document.getElementById(listId);
   if (!list) return;
-  const rowId  = (type === 'teacher' ? 'trow-' : 'srow-') + id;
-  const avatar = `member-avatar avatar-${type}`;
+  // Supprimer le message "aucun membre" s'il est encore affiché
+  const emptyMsg = document.getElementById('no-' + (type === 'teacher' ? 'teachers' : 'students') + '-msg');
+  if (emptyMsg) emptyMsg.remove();
+  const rowId    = (type === 'teacher' ? 'trow-' : 'srow-') + id;
+  const avatar   = `member-avatar avatar-${type}`;
   const removeFn = type === 'teacher' ? `removeTeacher(${id}, this)` : `removeStudent(${id}, this)`;
   list.insertAdjacentHTML('beforeend', `
     <div class="member-row" id="${rowId}">
@@ -345,6 +341,31 @@ function appendMember(listId, id, fullName, email, type) {
       </div>
       <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="${removeFn}" title="Retirer">
         <i class="bi bi-x-lg"></i>
+      </button>
+    </div>`);
+}
+
+/* ── Helper : remettre un membre dans la liste "à ajouter" après suppression ── */
+function appendPickRow(type, id, fullName, email) {
+  const pickId  = type + '-pick';
+  const pick    = document.getElementById(pickId);
+  if (!pick) return;
+  const emptyMsg = document.getElementById('no-' + type + '-pick-msg');
+  if (emptyMsg) emptyMsg.remove();
+  const btnClass = type === 'teacher' ? 'btn-outline-success' : 'btn-outline-primary';
+  const avatar   = `member-avatar avatar-${type}`;
+  const addFn    = type === 'teacher' ? `addTeacher(${id}, this)` : `addStudent(${id}, this)`;
+  pick.insertAdjacentHTML('beforeend', `
+    <div class="pick-row ${type}-option" data-name="${fullName.toLowerCase()}" data-email="${email.toLowerCase()}">
+      <div class="d-flex align-items-center gap-2">
+        <div class="${avatar}" style="width:30px;height:30px;font-size:.75rem;">${fullName[0].toUpperCase()}</div>
+        <div>
+          <div class="fw-semibold small">${fullName}</div>
+          <div class="text-muted" style="font-size:.7rem;">${email}</div>
+        </div>
+      </div>
+      <button class="btn btn-sm ${btnClass} py-0 px-2" onclick="${addFn}" title="Ajouter">
+        <i class="bi bi-plus-lg"></i>
       </button>
     </div>`);
 }
