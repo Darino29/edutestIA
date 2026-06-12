@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
  * Contrôleur pour l’exportation des examens (CSV / PDF)
  * Accessible aux enseignants ET aux administrateurs
  */
-#[Route('/admin')]
+#[Route('/export')]
 class AdminExportController extends AbstractController
 {
     /**

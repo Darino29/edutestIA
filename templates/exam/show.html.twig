@@ -14,9 +14,6 @@
                 class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-people-fill"></i> Gérer les affectations
                 </a>
-                <a href="{{ path('app_question_new', {'exam': exam.id}) }}" class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-plus-circle"></i> Ajouter une question
-                </a>
             {% endif %}
             <a href="{{ path('app_exam_edit', {'id': exam.id}) }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil-square"></i> Modifier

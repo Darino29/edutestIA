@@ -46,7 +46,7 @@
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
-                    <div class="invalid-feedback d-block" id="pwd-error" style="display:none!important"></div>
+                    <div class="invalid-feedback" id="pwd-error"></div>
                 </div>
 
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
@@ -129,12 +129,10 @@
     errorEl.style.display = 'none';
   }
 
-  emailInput.addEventListener('blur', validateEmail);
   emailInput.addEventListener('input', function () {
     if (emailInput.classList.contains('is-invalid')) validateEmail();
   });
 
-  pwdInput.addEventListener('blur', validatePassword);
   pwdInput.addEventListener('input', function () {
     if (pwdInput.classList.contains('is-invalid')) validatePassword();
   });

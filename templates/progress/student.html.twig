@@ -174,7 +174,7 @@
         </div>
     </div>
 
-    {# ======== RECOMMANDATIONS IA (chargées en AJAX) ======== #}
+    {# ======== RECOMMANDATIONS IA (à la demande) ======== #}
     {% if totalTopics > 0 %}
     <div class="section-card mt-2" id="recommendations-card">
         <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -185,17 +185,13 @@
                     <small class="text-muted">Générées par IA selon votre profil de progression</small>
                 </div>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-warning d-none" id="reco-play-btn">
-                    <i class="fas fa-volume-up me-1"></i>Écouter
-                </button>
-                <button class="btn btn-sm btn-outline-danger d-none" id="reco-stop-btn">
-                    <i class="fas fa-stop me-1"></i>Stop
+            <div class="d-flex gap-2" id="reco-actions">
+                <button class="btn btn-sm btn-primary" id="reco-generate-btn">
+                    <i class="bi bi-robot me-1"></i>Générer les recommandations
                 </button>
             </div>
         </div>
-        <hr>
-        <div id="recommendations-loading" class="text-center py-3">
+        <div id="recommendations-loading" class="text-center py-3" style="display:none;">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="text-muted mt-2 small">Génération des recommandations IA…</p>
         </div>
@@ -245,43 +241,63 @@
         });
         {% endif %}
 
-        // Chargement AJAX des recommandations IA
-        const recoCard    = document.getElementById('recommendations-card');
-        const recoLoading = document.getElementById('recommendations-loading');
-        const recoOutput  = document.getElementById('recommendations-output');
-        const recoPlay    = document.getElementById('reco-play-btn');
-        const recoStop    = document.getElementById('reco-stop-btn');
+        // Recommandations IA — chargées uniquement au clic du bouton
+        const recoGenerateBtn = document.getElementById('reco-generate-btn');
+        const recoLoading     = document.getElementById('recommendations-loading');
+        const recoOutput      = document.getElementById('recommendations-output');
+        const recoActions     = document.getElementById('reco-actions');
 
-        if (recoCard) {
-            fetch('{{ path('student_progress_recommendations') }}')
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.text || data.text.startsWith('ERREUR_')) {
-                        recoCard.style.display = 'none';
-                        return;
-                    }
-                    const recoText = data.text;
-                    recoOutput.innerHTML = marked.parse(recoText);
-                    recoLoading.style.display = 'none';
-                    recoOutput.style.display   = '';
-                    recoPlay.classList.remove('d-none');
+        if (recoGenerateBtn) {
+            recoGenerateBtn.addEventListener('click', function () {
+                recoGenerateBtn.disabled = true;
+                recoGenerateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Génération…';
+                recoLoading.style.display = '';
 
-                    recoPlay.addEventListener('click', function () {
-                        if (speechSynthesis.speaking) return;
-                        const plain = recoText.replace(/[#*_`~>\-]/g, '').trim();
-                        const utt = new SpeechSynthesisUtterance(plain);
-                        utt.lang = 'fr-FR'; utt.rate = 0.95;
-                        utt.onend  = () => recoStop.classList.add('d-none');
-                        utt.onerror = () => recoStop.classList.add('d-none');
-                        recoStop.classList.remove('d-none');
-                        speechSynthesis.speak(utt);
+                fetch('{{ path('student_progress_recommendations') }}')
+                    .then(r => r.json())
+                    .then(data => {
+                        recoLoading.style.display = 'none';
+                        if (!data.text || data.text.startsWith('ERREUR_')) {
+                            recoGenerateBtn.disabled = false;
+                            recoGenerateBtn.innerHTML = '<i class="bi bi-robot me-1"></i>Générer les recommandations';
+                            return;
+                        }
+                        const recoText = data.text;
+                        recoOutput.innerHTML = marked.parse(recoText);
+                        recoOutput.style.display = '';
+
+                        // Remplacer le bouton "Générer" par les contrôles audio
+                        recoActions.innerHTML = `
+                            <button class="btn btn-sm btn-outline-warning" id="reco-play-btn">
+                                <i class="fas fa-volume-up me-1"></i>Écouter
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger d-none" id="reco-stop-btn">
+                                <i class="fas fa-stop me-1"></i>Stop
+                            </button>`;
+
+                        const recoPlay = document.getElementById('reco-play-btn');
+                        const recoStop = document.getElementById('reco-stop-btn');
+                        recoPlay.addEventListener('click', function () {
+                            if (speechSynthesis.speaking) return;
+                            const plain = recoText.replace(/[#*_`~>\-]/g, '').trim();
+                            const utt = new SpeechSynthesisUtterance(plain);
+                            utt.lang = 'fr-FR'; utt.rate = 0.95;
+                            utt.onend  = () => recoStop.classList.add('d-none');
+                            utt.onerror = () => recoStop.classList.add('d-none');
+                            recoStop.classList.remove('d-none');
+                            speechSynthesis.speak(utt);
+                        });
+                        recoStop.addEventListener('click', function () {
+                            speechSynthesis.cancel();
+                            this.classList.add('d-none');
+                        });
+                    })
+                    .catch(() => {
+                        recoLoading.style.display = 'none';
+                        recoGenerateBtn.disabled = false;
+                        recoGenerateBtn.innerHTML = '<i class="bi bi-robot me-1"></i>Générer les recommandations';
                     });
-                    recoStop.addEventListener('click', function () {
-                        speechSynthesis.cancel();
-                        this.classList.add('d-none');
-                    });
-                })
-                .catch(() => { recoCard.style.display = 'none'; });
+            });
         }
     });
     </script>
