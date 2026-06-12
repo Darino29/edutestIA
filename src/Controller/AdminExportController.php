@@ -78,9 +78,11 @@ class AdminExportController extends AbstractController
 
         $mpdf->WriteHTML($html);
 
-        // Sortie du PDF dans le navigateur
-        return new Response($mpdf->Output("exam_{$exam->getId()}.pdf", 'I'), 200, [
-            'Content-Type' => 'application/pdf',
+        $pdfContent = $mpdf->Output('', 'S');
+
+        return new Response($pdfContent, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="exam_'.$exam->getId().'_resultats.pdf"',
         ]);
     }
 }
