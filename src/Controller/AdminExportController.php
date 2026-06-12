@@ -70,10 +70,10 @@ class AdminExportController extends AbstractController
             'assignments' => $exam->getAssignments(),
         ]);
 
-        // Création du PDF avec mPDF
         $mpdf = new Mpdf([
             'default_font_size' => 10,
-            'default_font' => 'dejavusans',
+            'default_font'      => 'dejavusans',
+            'tempDir'           => sys_get_temp_dir() . '/mpdf',
         ]);
 
         $mpdf->WriteHTML($html);

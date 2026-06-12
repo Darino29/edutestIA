@@ -58,7 +58,7 @@
     <p><strong>Date de fin :</strong> {{ exam.endAt ? exam.endAt|date('d/m/Y H:i') : '-' }}</p>
 </div>
 
-<h3>🧾 Liste des copies soumises</h3>
+<h3>Liste des copies soumises</h3>
 
 <table>
     <thead>
@@ -127,9 +127,9 @@
         {% endfor %}
 
         <div class="summary">
-            <p><strong>📊 Moyenne de la classe :</strong> {{ moyenne|number_format(2, ',', ' ') }}/20</p>
-            <p><strong>🔝 Note la plus élevée :</strong> {{ maxNote|number_format(2, ',', ' ') }}/20</p>
-            <p><strong>🔻 Note la plus basse :</strong> {{ minNote|number_format(2, ',', ' ') }}/20</p>
+            <p><strong>Moyenne de la classe :</strong> {{ moyenne|number_format(2, ',', ' ') }}/20</p>
+            <p><strong>Note la plus élevée :</strong> {{ maxNote|number_format(2, ',', ' ') }}/20</p>
+            <p><strong>Note la plus basse :</strong> {{ minNote|number_format(2, ',', ' ') }}/20</p>
         </div>
     {% endif %}
 {% endif %}
