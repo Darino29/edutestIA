@@ -41,6 +41,8 @@ class OllamaController extends AbstractController
             if ($topic) {
                 $result = $this->aiService->generateRevisionNotes($topic);
             }
+        } elseif ($topic = trim((string) $request->query->get('topic', ''))) {
+            $result = $this->aiService->generateRevisionNotes($topic);
         } elseif ($loadId = $request->query->getInt('load')) {
             $saved = $repo->find($loadId);
             if ($saved && $saved->getUser() === $this->getUser()) {

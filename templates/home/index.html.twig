@@ -89,6 +89,7 @@
       Créez, affectez et corrigez vos examens en ligne.<br>
       Les étudiants passent, les résultats arrivent.
     </p>
+    {% if not app.user %}
     <div class="hero-cta">
       <a href="{{ path('app_login') }}" class="btn btn-light btn-lg px-5 fw-semibold">
         <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
@@ -97,6 +98,7 @@
         <i class="bi bi-person-plus me-2"></i>Créer un compte
       </a>
     </div>
+    {% endif %}
     <p class="hero-proof">
       Déjà utilisée par <strong>+200</strong> étudiants et <strong>+10</strong> enseignants
     </p>

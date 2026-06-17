@@ -156,7 +156,7 @@
                             <span class="fw-semibold small">{{ item.topic }}</span>
                             <div class="d-flex gap-1">
                                 <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;min-width:26px;height:26px;padding:0 6px;font-size:.78rem;font-weight:700;background:#fecaca;color:#7f1d1d;">{{ item.examsCount }}</span>
-                                <a href="{{ path('app_ai_revision') }}" class="stat-pill text-decoration-none" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
+                                <a href="{{ path('app_ai_revision', {topic: item.topic}) }}" class="stat-pill text-decoration-none" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
                                     <i class="bi bi-robot me-1"></i>Réviser
                                 </a>
                             </div>
