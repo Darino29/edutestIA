@@ -127,7 +127,15 @@
         box-shadow: 0 2px 8px rgba(99,102,241,.3);
         transition: all 0.15s;
       }
-      .btn-navbar-ai:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99,102,241,.4); color:#fff; }
+      .btn-navbar-ai:hover { color: #fff; }
+      .btn-navbar-ai.show,
+      .btn-navbar-ai:active,
+      .btn-navbar-ai.show:hover {
+        background: linear-gradient(135deg, #7C3AED, var(--edu-indigo)) !important;
+        box-shadow: 0 2px 8px rgba(99,102,241,.3) !important;
+        color: #fff !important;
+        transform: none !important;
+      }
       .btn-navbar-ai.dropdown-toggle::after { margin-left: 6px; }
 
       /* Avatar */

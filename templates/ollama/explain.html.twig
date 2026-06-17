@@ -26,6 +26,33 @@
         .markdown-content li  { margin-bottom: 0.5rem; }
         .markdown-content strong { color: #2d3748; }
         .markdown-content blockquote { border-left: 4px solid #5a67d8; padding-left: 1rem; color: #4a5568; font-style: italic; }
+
+        @media print {
+            body { padding-top: 0 !important; background: #fff !important; }
+            nav, .search-area,
+            .d-flex.justify-content-between.align-items-center.mb-4,
+            hr, footer, .btn { display: none !important; }
+
+            .explain-page { background: #fff !important; padding: 0 !important; }
+            .container { max-width: 100% !important; padding: 0 !important; }
+            .result-area {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                animation: none !important;
+            }
+
+            .markdown-content h1 { font-size: 1.6rem; color: #1a202c; }
+            .markdown-content h2 { font-size: 1.2rem; color: #2d3748; border-bottom: 1px solid #ccc; }
+            .markdown-content p, .markdown-content li { font-size: 11pt; color: #000; }
+            .markdown-content pre, .markdown-content code {
+                background: #f4f4f4 !important;
+                border: 1px solid #ddd;
+                font-size: 10pt;
+            }
+            .markdown-content h2 { page-break-after: avoid; }
+            p, li { orphans: 3; widows: 3; }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 {% endblock %}

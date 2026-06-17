@@ -207,8 +207,29 @@
         });
     });
 
-    // Nettoyer à la soumission
-    form.addEventListener('submit', () => localStorage.removeItem(storageKey));
+    // Nettoyer à la soumission normale
+    form.addEventListener('submit', () => {
+        form.dataset.submitted = 'true';
+        localStorage.removeItem(storageKey);
+    });
+
+    // Auto-soumettre dès que l'étudiant quitte la page + marquer comme suspect
+    window.addEventListener('pagehide', function () {
+        if (form.dataset.submitted) return;
+        form.dataset.submitted = 'true';
+        localStorage.removeItem(storageKey);
+
+        // Injecter quit_detected dans le rapport de surveillance
+        try {
+            const proctorEl = document.getElementById('proctor');
+            const state = JSON.parse(proctorEl.value || '{}');
+            state.quitDetected = true;
+            proctorEl.value = JSON.stringify(state);
+        } catch(e) {}
+
+        const data = new FormData(form);
+        navigator.sendBeacon('{{ path("student_exam_submit", {id: assignment.id}) }}', data);
+    });
 </script>
 <script src="{{ asset('js/anti_cheat.js') }}" defer></script>
 {% endblock %}

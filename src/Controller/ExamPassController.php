@@ -19,7 +19,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class ExamPassController extends AbstractController
 {
     #[Route('/exams', name: 'student_exams')]
-    public function list(EntityManagerInterface $em): Response
+    public function list(EntityManagerInterface $em, AutoGrader $grader): Response
     {
         $student = $this->getUser();
         if (!$student) {
@@ -34,6 +34,21 @@ class ExamPassController extends AbstractController
             ->orderBy('e.startAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        // Si l'étudiant est sur la liste, il a quitté l'examen → soumettre tous les STARTED
+        $needsFlush = false;
+        foreach ($assignments as $assignment) {
+            if ($assignment->getStatus() !== 'STARTED') {
+                continue;
+            }
+            $assignment->setStatus('SUBMITTED');
+            $assignment->setSubmittedAt(new \DateTimeImmutable());
+            $assignment->setFinalGrade($grader->grade($assignment));
+            $needsFlush = true;
+        }
+        if ($needsFlush) {
+            $em->flush();
+        }
 
         return $this->render('exam_pass/list.html.twig', [
             'assignments' => $assignments ?? [],
@@ -67,7 +82,7 @@ class ExamPassController extends AbstractController
     }
 
     #[Route('/exam/{id}/run', name: 'student_exam_run')]
-    public function run(Assignment $assignment, EntityManagerInterface $em): Response
+    public function run(Assignment $assignment, EntityManagerInterface $em, AutoGrader $grader): Response
     {
         if ($assignment->getStudent() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
@@ -87,10 +102,16 @@ class ExamPassController extends AbstractController
             new \DateInterval('PT' . $exam->getDurationMinutes() . 'M')
         );
 
-        // 🧭 Si le temps est écoulé, on redirige
+        // Si le temps est écoulé : auto-soumettre avec les réponses existantes
         if ($deadline <= new \DateTimeImmutable()) {
-            $this->addFlash('warning', '⏰ Le temps imparti est écoulé. Votre examen a été soumis automatiquement.');
-            return $this->redirectToRoute('student_results');
+            $finalGrade = $grader->grade($assignment);
+            $assignment->setStatus('SUBMITTED');
+            $assignment->setSubmittedAt(new \DateTimeImmutable());
+            $assignment->setFinalGrade($finalGrade);
+            $em->flush();
+
+            $this->addFlash('warning', '⏰ Le temps imparti était écoulé. Votre examen a été soumis automatiquement.');
+            return $this->redirectToRoute('student_result_detail', ['id' => $assignment->getId()]);
         }
 
         return $this->render('exam_pass/run.html.twig', [
@@ -145,12 +166,12 @@ class ExamPassController extends AbstractController
             $proctor = [];
         }
 
-        $tabHidden = (int) ($proctor['tabHiddenCount'] ?? 0);
-        $copy = (int) ($proctor['copyCount'] ?? 0);
-        $paste = (int) ($proctor['pasteCount'] ?? 0);
+        $tabHidden    = (int)  ($proctor['tabHiddenCount'] ?? 0);
+        $copy         = (int)  ($proctor['copyCount']      ?? 0);
+        $paste        = (int)  ($proctor['pasteCount']     ?? 0);
+        $quitDetected = (bool) ($proctor['quitDetected']   ?? false);
 
-        // règle simple
-        $isFlagged = ($tabHidden >= 2) || ($copy + $paste >= 2);
+        $isFlagged = $quitDetected || ($tabHidden >= 2) || ($copy + $paste >= 2);
 
         $assignment->setProctoringReport($proctor);
         $assignment->setIsFlagged($isFlagged);

@@ -72,6 +72,18 @@
   </style>
 {% endblock %}
 
+{% block javascripts %}
+{{ parent() }}
+<script>
+    // Forcer le rechargement si la page vient du cache back-forward
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
+{% endblock %}
+
 {% block body %}
 {% set assignments = assignments|default([]) %}
 
@@ -161,10 +173,7 @@
                       </form>
                     </div>
                   {% elseif a.status == 'STARTED' %}
-                    <a href="{{ path('student_exam_run', {id: a.id}) }}"
-                       class="btn btn-sm btn-outline-warning">
-                      <i class="bi bi-play-circle me-1"></i> Continuer
-                    </a>
+                    <span class="text-muted small">En cours…</span>
                   {% elseif a.status == 'SUBMITTED' %}
                     <a href="{{ path('student_result_detail', {id: a.id}) }}"
                        class="btn btn-sm btn-outline-info">
