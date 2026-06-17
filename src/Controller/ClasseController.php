@@ -62,7 +62,9 @@ class ClasseController extends AbstractController
 
         $availableStudents = array_filter(
             $userRepo->findByRole('ROLE_STUDENT'),
-            fn(User $u) => $u->isApproved() && !in_array($u->getId(), $currentStudentIds, true)
+            fn(User $u) => $u->isApproved()
+                && !in_array($u->getId(), $currentStudentIds, true)
+                && $u->getClasse() === null
         );
 
         $availableTeachers = array_filter(
